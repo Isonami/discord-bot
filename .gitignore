@@ -58,3 +58,6 @@ target/
 
 # Settings
 settings.py
+
+# Pycharm
+.idea/
