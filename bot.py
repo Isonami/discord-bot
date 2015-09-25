@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import discord
 import logging
 import logging.config
@@ -50,12 +51,12 @@ LOGGING = {
     }
 }
 ifnfo_line = "Nedo bot version %s" % version
-cmd_start = "!"
+cmd_start = "."
 commands = [
-    (r"h(?:elp)?", "cmd_help", "!help - show help"),
-    (r"\$(?P<currency>(?: [a-zA-Z]{3})+)?", "cmd_exchange", "!$ USD|EUR - show exchange rates"),
+    (r"h(?:elp)?", "cmd_help", "%shelp - show help" % cmd_start),
+    (r"\$(?P<currency>(?: [a-zA-Z]{3})+)?", "cmd_exchange", "%s$ USD|EUR - show exchange rates" % cmd_start),
 ]
-rates_delay = 600
+rates_delay = 60
 rates = {
     "rates": {},
     "next": 0
@@ -74,11 +75,14 @@ def getrates():
         response = http_client.fetch(rates_url, method="GET")
         # print response.body
         rvars = json.loads(response.body)
-        now = time()
-        if "rates" in rvars:
-            logger.debug("Rates updated")
-            rates["rates"] = rvars["rates"]
-            rates["next"] = now + rates_delay
+        if rvars:
+            now = time()
+            if "rates" in rvars:
+                logger.debug("Rates updated")
+                rates["rates"] = rvars["rates"]
+                rates["next"] = now + rates_delay
+        else:
+            logger.error("Can not get rates")
         return None
     except httpclient.HTTPError as e:
         # HTTPError is raised for non-200 responses; the response
@@ -152,6 +156,11 @@ class Bot:
             else:
                 sleep(300)
 
+    def send(self, channel, message):
+        if type(message) is unicode:
+            message = message.encode('utf-8')
+        self.client.send_message(channel, message)
+
     def msg_proc(self, message):
         try:
             if message.content.startswith(cmd_start):
@@ -177,7 +186,7 @@ class Bot:
         help_msg = ifnfo_line + "\nAvailable commands:\n"
         for desc in self.desc:
             help_msg += "    %s\n" % desc
-        self.client.send_message(message.channel, help_msg)
+        self.send(message.channel, help_msg)
 
     def cmd_exchange(self, message, *args, **kwargs):
         try:
@@ -199,6 +208,7 @@ class Bot:
             cur_out = []
             for curenc in cur_list:
                 arrow = ""
+                arrow = ARROW_UP
                 num = def_cur / rates["rates"][curenc]
                 if curenc in rates_history:
                     if num > rates_history[curenc]:
@@ -207,7 +217,7 @@ class Bot:
                         arrow = ARROW_DOWN
                 cur_out.append("1 %s = %0.2f%s %s" % (curenc, num, arrow, rates_def))
                 rates_history[curenc] = num
-            self.client.send_message(message.channel, "Exchange rates: %s" % ", ".join(cur_out))
+            self.send(message.channel, "Exchange rates: %s" % u", ".join(cur_out))
         except Exception, exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
