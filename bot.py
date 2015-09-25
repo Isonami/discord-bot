@@ -8,7 +8,7 @@ from settings import login, password, version, rates_url
 import os
 import re
 
-os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org'
+os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
 
 LOGGING = {
@@ -96,7 +96,9 @@ def server_status():
             for item in rvars["components"]:
                 if item["name"] == "API":
                     if item["status"] == "operational":
+                        logger.debug("Server status is: operational")
                         return True
+                    logger.debug("Server status is: %s" % item["status"])
                     break
         return None
     except httpclient.HTTPError as e:
@@ -136,10 +138,13 @@ class Bot:
         def on_disconnect():
             if not self.disconect:
                 logger.debug('Reconnecting')
+                self.reconnect()
 
     def reconnect(self):
+        self.client.logout()
         while not self.disconect:
             if server_status():
+                logger.info('Reconnect attempt...')
                 self.client.login(self.login, self.password)
                 if self.client.is_logged_in:
                     return
@@ -148,7 +153,6 @@ class Bot:
                 sleep(300)
 
     def msg_proc(self, message):
-        # splt_msg = message.content.split(" ")
         try:
             if message.content.startswith(cmd_start):
                 msg = ' '.join(message.content[len(cmd_start):].split())
@@ -216,8 +220,7 @@ def main():
     http_client = httpclient.HTTPClient()
     bot = Bot(login, password)
     while not bot.disconect:
-        bot.client.run()
-        sleep(10)
+        sleep(60)
 
 
 if __name__ == "__main__":
