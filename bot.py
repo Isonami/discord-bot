@@ -8,6 +8,7 @@ from time import sleep, time
 from settings import login, password, version, rates_url
 import os
 import re
+import modules
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -53,47 +54,16 @@ LOGGING = {
 ifnfo_line = "Nedo bot version %s" % version
 cmd_start = "."
 commands = [
-    (r"h(?:elp)?", "cmd_help", "%shelp - show help" % cmd_start),
-    (r"\$(?P<currency>(?: [a-zA-Z]{3})+)?", "cmd_exchange", "%s$ USD|EUR - show exchange rates" % cmd_start),
+    (r"h(?:elp)?", "help", "%shelp - show help" % cmd_start),
+    (r"\$(?P<currency>(?: [a-zA-Z]{3})+)?", "exchangerates", "%s$ USD|EUR - show exchange rates" % cmd_start),
 ]
-rates_delay = 60
-rates = {
-    "rates": {},
-    "next": 0
-}
-rates_def = "RUB"
-rates_any_list = ["USD", "EUR", "UAH"]
-rates_history = {}
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
-ARROW_UP = unichr(8593)
-ARROW_DOWN = unichr(8595)
 
 
-def getrates():
-    try:
-        logger.debug("Get new rates")
-        response = http_client.fetch(rates_url, method="GET")
-        # print response.body
-        rvars = json.loads(response.body)
-        if rvars:
-            now = time()
-            if "rates" in rvars:
-                logger.debug("Rates updated")
-                rates["rates"] = rvars["rates"]
-                rates["next"] = now + rates_delay
-        else:
-            logger.error("Can not get rates")
-        return None
-    except httpclient.HTTPError as e:
-        # HTTPError is raised for non-200 responses; the response
-        # can be found in e.response.
-        logger.error("HTTPError: " + str(e))
-
-
-def server_status():
+def server_status(client):
     try:
         logger.debug("Get server status")
-        response = http_client.fetch(status_url, method="GET")
+        response = client.fetch(status_url, method="GET")
         # print response.body
         rvars = json.loads(response.body)
         if "components" in rvars:
@@ -120,13 +90,17 @@ class Bot:
         self.disconect = False
         self.cmds = {}
         self.desc = []
+        self.ifnfo_line = ifnfo_line
+        self.http_client = http_client
         all_reg = r""
         for reg, cmd_name, desk in commands:
-            if hasattr(self, cmd_name):
-                self.cmds[cmd_name] = getattr(self, cmd_name)
-                if len(desk) > 0:
-                    self.desc.append(desk)
-                all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
+            if hasattr(modules, cmd_name):
+                module = getattr(modules, cmd_name)
+                if hasattr(module, "main"):
+                    self.cmds[cmd_name] = getattr(module, "main")
+                    if len(desk) > 0:
+                        self.desc.append(desk)
+                    all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
         self.reg = re.compile(all_reg[:-1])
 
         @self.client.event
@@ -147,7 +121,7 @@ class Bot:
     def reconnect(self):
         self.client.logout()
         while not self.disconect:
-            if server_status():
+            if server_status(self.http_client):
                 logger.info('Reconnect attempt...')
                 self.client.login(self.login, self.password)
                 if self.client.is_logged_in:
@@ -178,46 +152,7 @@ class Bot:
                                 kwargs[item] = value
                     args = m.groups()[len(rkwargs):]
                     if command:
-                        command(message, *args, **kwargs)
-        except Exception, exc:
-            logger.error("%s: %s" % (exc.__class__.__name__, exc))
-
-    def cmd_help(self, message, *args, **kwargs):
-        help_msg = ifnfo_line + "\nAvailable commands:\n"
-        for desc in self.desc:
-            help_msg += "    %s\n" % desc
-        self.send(message.channel, help_msg)
-
-    def cmd_exchange(self, message, *args, **kwargs):
-        try:
-            now = time()
-            if now > rates["next"]:
-                getrates()
-            cur_list = []
-            if "currency" in kwargs and kwargs["currency"]:
-                splt_cur = kwargs["currency"][1:].split()
-                for cur in splt_cur:
-                    if cur.upper() in rates["rates"]:
-                        cur_list .append(cur.upper())
-            else:
-                cur_list = rates_any_list
-            if len(cur_list) <= 0:
-                self.client.send_message(message.channel, "Wrong currency specified")
-                return
-            def_cur = rates["rates"][rates_def]
-            cur_out = []
-            for curenc in cur_list:
-                arrow = ""
-                arrow = ARROW_UP
-                num = def_cur / rates["rates"][curenc]
-                if curenc in rates_history:
-                    if num > rates_history[curenc]:
-                        arrow = ARROW_UP
-                    elif num < rates_history[curenc]:
-                        arrow = ARROW_DOWN
-                cur_out.append("1 %s = %0.2f%s %s" % (curenc, num, arrow, rates_def))
-                rates_history[curenc] = num
-            self.send(message.channel, "Exchange rates: %s" % u", ".join(cur_out))
+                        command(self, message, *args, **kwargs)
         except Exception, exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
@@ -231,7 +166,6 @@ def main():
     bot = Bot(login, password)
     while not bot.disconect:
         sleep(60)
-
 
 if __name__ == "__main__":
     main()
