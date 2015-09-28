@@ -7,6 +7,7 @@ import sqlite3
 from xml.dom import minidom
 import re
 import uuid
+import binascii
 
 
 walpha_url = None
@@ -70,7 +71,7 @@ def getimage(client, src):
         file_dir = path.join(bot_dir, "static", "wolframalpha")
         if not path.exists(file_dir):
             mkdir(file_dir, 0o750)
-        with open(path.join(file_dir, filename), "w") as f:
+        with open(path.join(file_dir, filename), "wb") as f:
             f.write(response.body)
         return walpha_static_url.format(file=filename)
     except HTTPError as e:
