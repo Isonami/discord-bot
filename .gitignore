@@ -58,6 +58,10 @@ target/
 
 # Settings
 settings.py
+settings.json
+
+# db
+db/*.db
 
 # Pycharm
 .idea/

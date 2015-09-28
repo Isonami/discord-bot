@@ -4,11 +4,12 @@ import logging
 import logging.config
 import tornado.httpclient as httpclient
 import json
-from time import sleep, time
-from settings import login, password, version, rates_url
+from time import sleep
 import os
 import re
 import modules
+import config
+from commands import commands
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -51,12 +52,8 @@ LOGGING = {
             },
     }
 }
-ifnfo_line = "Nedo bot version %s" % version
+ifnfo_line = "Nedo bot version %s"
 cmd_start = "."
-commands = [
-    (r"h(?:elp)?", "help", "%shelp - show help" % cmd_start),
-    (r"\$(?P<currency>(?: [a-zA-Z]{3})+)?", "exchangerates", "%s$ USD|EUR - show exchange rates" % cmd_start),
-]
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
 
 
@@ -82,15 +79,17 @@ def server_status(client):
 
 
 class Bot:
-    def __init__(self, log, pswd):
-        self.login = log
-        self.password = pswd
+    def __init__(self):
+        self.config = config.Config()
+        modules.init(self)
+        self.login = self.config.get("discord.login")
+        self.password = self.config.get("discord.password")
         self.client = discord.Client()
         self.client.login(self.login, self.password)
         self.disconect = False
         self.cmds = {}
         self.desc = []
-        self.ifnfo_line = ifnfo_line
+        self.ifnfo_line = ifnfo_line % self.config.get("version")
         self.http_client = http_client
         all_reg = r""
         for reg, cmd_name, desk in commands:
@@ -99,7 +98,7 @@ class Bot:
                 if hasattr(module, "main"):
                     self.cmds[cmd_name] = getattr(module, "main")
                     if len(desk) > 0:
-                        self.desc.append(desk)
+                        self.desc.append(desk.format(cmd_start=cmd_start))
                     all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
         self.reg = re.compile(all_reg[:-1])
 
@@ -138,7 +137,7 @@ class Bot:
     def msg_proc(self, message):
         try:
             if message.content.startswith(cmd_start):
-                msg = ' '.join(message.content[len(cmd_start):].split())
+                msg = ' '.join(message.content[len(cmd_start):].split()).lower()
                 m = self.reg.match(msg)
                 if m:
                     rkwargs = m.groupdict()
@@ -163,7 +162,7 @@ def main():
     logger = logging.getLogger(__name__)
     global http_client
     http_client = httpclient.HTTPClient()
-    bot = Bot(login, password)
+    bot = Bot()
     while not bot.disconect:
         sleep(60)
 

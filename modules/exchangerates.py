@@ -1,9 +1,9 @@
 import logging
-from settings import rates_url
 from time import time
 import json
 from tornado.httpclient import HTTPError
 
+rates_url = None
 rates_delay = 600
 rates = {
     "rates": {},
@@ -18,9 +18,23 @@ ARROW_DOWN = unichr(8595)
 logger = logging.getLogger(__name__)
 
 
+def init(bot):
+    global rates_url
+    rates_url = bot.config.get("exchangerates.url").format(appid=bot.config.get("exchangerates.appid"))
+    global rates_def
+    rates_def = bot.config.get("exchangerates.start_currency", rates_def)
+    global rates_any_list
+    rates_any_list = bot.config.get("exchangerates.rates_any_list", rates_any_list)
+    global rates_delay
+    rates_delay = bot.config.get("exchangerates.delay", rates_delay)
+
+
 def getrates(client):
     try:
         logger.debug("Get new rates")
+        if not rates_url:
+            logger.debug("Can not get rates, no url specified!")
+            return
         response = client.fetch(rates_url, method="GET")
         # print response.body
         rvars = json.loads(response.body)

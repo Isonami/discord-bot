@@ -1,0 +1,12 @@
+{
+  "discord": {
+    "login": "some@e.mail",
+    "password": "password"
+  },
+  "exchangerates": {
+    "appid": "SELFAPIKEY"
+  }
+  "wolframalpha": {
+    "appid": "SELFAPIKEY"
+  }
+}
