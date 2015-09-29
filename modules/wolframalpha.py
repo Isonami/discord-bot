@@ -159,11 +159,11 @@ def main(self, message, *args, **kwargs):
                     qimg = "\n" + getimage(self.http_client, qimg.replace("&amp;", "&"))
             for oneitem in itemlist:
                 for text_node in oneitem.getElementsByTagName('plaintext'):
-                    if len(text_node.childNodes) == 0:
-                        continue
-                    text = text_node.childNodes[0].data
                     img_node = oneitem.getElementsByTagName('img')
                     img_src = ""
+                    if len(text_node.childNodes) == 0 and len(img_node) == 0 :
+                        continue
+                    text = text_node.childNodes[0].data
                     if len(img_node) > 0:
                         img_src = img_node[0].getAttribute('src')
                     if len(img_src) > 0:
