@@ -7,7 +7,7 @@ import sqlite3
 from xml.dom import minidom
 import re
 import uuid
-from urllib import urlencode
+from urllib import quote
 
 
 walpha_url = None
@@ -75,7 +75,7 @@ def getanswer(client, qinput):
         if not walpha_url:
             logger.debug("Can not get rates, no url specified!")
             return
-        response = client.fetch(walpha_url.format(appid=walpha_appid, input=urlencode(qinput)), method="GET")
+        response = client.fetch(walpha_url.format(appid=walpha_appid, input=quote(qinput)), method="GET")
         # print response.body
         if response.body:
             return response.body
