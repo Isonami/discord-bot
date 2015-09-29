@@ -143,8 +143,10 @@ def main(self, message, *args, **kwargs):
             if message.author.id in admins:
                 delete_db(question.lower())
                 self.send(message.channel, "Question %s removed from cache" % question)
+                return
             else:
                 self.send(message.channel, "You are not an admin")
+                return
         row = select_db(question.lower())
         if row:
             logger.debug("Found cache: %s", row[1])
