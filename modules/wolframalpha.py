@@ -16,12 +16,21 @@ walpha_appid = None
 walpha_static_url = None
 delay = {"last": 0}
 bot_dir = ""
+admins = []
 
 msg_template = """Question: {question}{qimg}
 
 Answer: {answer}{img}"""
 
 logger = logging.getLogger(__name__)
+
+
+def check_xml_pod(pod):
+    if pod.hasAttribute('primary') and pod.getAttribute('primary') == 'true':
+        return True
+    if pod.hasAttribute('title') and (pod.getAttribute('title') == 'Plot' or pod.getAttribute('title') == 'Plots'):
+        return True
+    return False
 
 
 def init_db():
@@ -54,6 +63,13 @@ def select_db(question):
     return row
 
 
+def delete_db(question):
+    if "con" not in globals() or "cur" not in globals() or not con or not cur:
+        init_db()
+    cur.execute("DELETE FROM Cache WHERE Question = ?;", (question,))
+    row = cur.fetchone()
+    return row
+
 def init(bot):
     global walpha_url
     walpha_url = bot.config.get("wolframalpha.url")
@@ -65,6 +81,8 @@ def init(bot):
     walpha_delay = bot.config.get("wolframalpha.delay", walpha_delay)
     global bot_dir
     bot_dir = bot.config.get("main.dir")
+    global admins
+    admins = bot.config.get("discord.admins")
     global imgre
     imgre = re.compile(r".+Type=image/([a-zA-z]{3,4})&.+")
 
@@ -118,10 +136,15 @@ def main(self, message, *args, **kwargs):
         now = time()
         if "question" in kwargs and kwargs["question"]:
             question = kwargs["question"].encode('utf-8')
-            pass
         else:
             logger.error("Can not parse question!")
             return
+        if "clear" in kwargs and kwargs["clear"]:
+            if message.author.id in admins:
+                delete_db(question.lower())
+                self.send(message.channel, "Question %s removed from cache" % question)
+            else:
+                self.send(message.channel, "You are not an admin")
         row = select_db(question.lower())
         if row:
             logger.debug("Found cache: %s", row[1])
@@ -136,10 +159,7 @@ def main(self, message, *args, **kwargs):
                 logger.error("Can not get response from wolframalpha")
                 return
             mdom = minidom.parseString(out)
-            itemlist = [p for p in mdom.getElementsByTagName('pod') if
-                        (p.hasAttribute('primary') and p.getAttribute('primary') == 'true') or
-                        (p.hasAttribute('title') and (p.getAttribute('title') == 'Plot' or
-                                                      p.getAttribute('title') == 'Plots'))]
+            itemlist = [p for p in mdom.getElementsByTagName('pod') if check_xml_pod(p)]
             if len(itemlist) < 1:
                 didyoumeans = [p.childNodes[0].data for p in mdom.getElementsByTagName('didyoumean') if p and
                                p.childNodes > 0]
@@ -148,7 +168,7 @@ def main(self, message, *args, **kwargs):
                     return
                 self.send(message.channel, "Did you mean: %s." % ", ".join(didyoumeans))
                 return
-            delay["last"] = now
+            delay["last"] = now + walpha_delay
             ans = []
             qimg = ""
             qlist = [p for p in mdom.getElementsByTagName('pod') if p.hasAttribute('id') and

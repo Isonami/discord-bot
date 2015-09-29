@@ -6,6 +6,7 @@ CONFIG = {
     "discord": {
         "login": None,
         "password": None,
+        "admins": [],
     },
     "exchangerates": {
         "url": "https://openexchangerates.org/api/latest.json?app_id={appid}",
