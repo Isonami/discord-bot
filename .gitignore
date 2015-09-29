@@ -59,9 +59,13 @@ target/
 # Settings
 settings.py
 settings.json
+logging.json
 
 # db
 db/*.db
 
 # Pycharm
 .idea/
+
+# static
+static/wolframalpha/*

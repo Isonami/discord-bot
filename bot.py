@@ -46,12 +46,9 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'DEBUG',
             },
-        'discord': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            },
     }
 }
+logging_file_name = "logging.json"
 ifnfo_line = "Nedo bot version %s"
 cmd_start = "."
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
@@ -157,6 +154,12 @@ class Bot:
 
 
 def main():
+    main_dir = os.path.dirname(os.path.realpath(__file__))
+    json_file = os.path.join(main_dir, logging_file_name)
+    if os.path.exists(json_file):
+        with open(json_file) as json_config:
+            global LOGGING
+            LOGGING = json.load(json_config)
     logging.config.dictConfig(LOGGING)
     global logger
     logger = logging.getLogger(__name__)
