@@ -166,7 +166,7 @@ def main(self, message, *args, **kwargs):
                     if len(text_node.childNodes) == 0 and len(img_node) == 0 :
                         continue
                     text = ""
-                    if len(img_node) > 0:
+                    if len(text_node.childNodes) > 0:
                         text = text_node.childNodes[0].data
                     if len(img_node) > 0:
                         img_src = img_node[0].getAttribute('src')
