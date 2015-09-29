@@ -136,9 +136,10 @@ def main(self, message, *args, **kwargs):
                 logger.error("Can not get response from wolframalpha")
                 return
             mdom = minidom.parseString(out)
-            itemlist = [p for p in mdom.getElementsByTagName('pod') if (p.hasAttribute('primary') and
-                                                                        p.getAttribute('primary') == 'true') or
-                        (p.hasAttribute('title') and p.getAttribute('title') == 'Plot')]
+            itemlist = [p for p in mdom.getElementsByTagName('pod') if
+                        (p.hasAttribute('primary') and p.getAttribute('primary') == 'true') or
+                        (p.hasAttribute('title') and (p.getAttribute('title') == 'Plot' or
+                                                      p.getAttribute('title') == 'Plots'))]
             if len(itemlist) < 1:
                 didyoumeans = [p.childNodes[0].data for p in mdom.getElementsByTagName('didyoumean') if p and
                                p.childNodes > 0]
