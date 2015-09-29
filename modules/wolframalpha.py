@@ -97,7 +97,9 @@ def getimage(client, src):
         m = imgre.match(src)
         if not m:
             return src
-        filename = str(uuid.uuid4()).replace("-", "")[10:] + "." + m.group(1)
+        # filename = str(uuid.uuid4()).replace("-", "")[10:] + "." + m.group(1)
+        # used png, because discor insert ugly "gif" watermark
+        filename = str(uuid.uuid4()).replace("-", "")[10:] + "." + "png"
         file_dir = path.join(bot_dir, "static", "wolframalpha")
         if not path.exists(file_dir):
             mkdir(file_dir, 0o750)
@@ -130,7 +132,9 @@ def main(self, message, *args, **kwargs):
                 return
             out = getanswer(self.http_client, question)
             if not out:
+                self.send(message.channel, "Some times error happends, i can not control it =(")
                 logger.error("Can not get response from wolframalpha")
+                return
             mdom = minidom.parseString(out)
             itemlist = [p for p in mdom.getElementsByTagName('pod') if p.hasAttribute('primary') and
                         p.getAttribute('primary') == 'true']
