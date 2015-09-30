@@ -1,4 +1,4 @@
-#!/usr/bin/env PATH=$PATH:/usr/local/sbin:/usr/local/bin python2.7
+#!/usr/bin/env python2.7
 import sys
 import threading
 from time import sleep

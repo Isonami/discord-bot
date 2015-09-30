@@ -192,8 +192,9 @@ def main(self, message, *args, **kwargs):
                         continue
                     text = ""
                     if len(text_node.childNodes) > 0:
-                        text = text_node.childNodes[0].data.encode('utf-8')
+                        text = text_node.childNodes[0].data
                         text = unire.sub(lambda match: "{0}".format(unichr(int(match.group(1), 16))), text)
+                        text = text.encode('utf-8')
                     if len(img_node) > 0:
                         img_src = img_node[0].getAttribute('src')
                     if len(img_src) > 0:
