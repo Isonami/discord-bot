@@ -13,7 +13,7 @@ from commands import commands
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
-
+PID = config.PID
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

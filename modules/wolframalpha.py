@@ -70,6 +70,7 @@ def delete_db(question):
     row = cur.fetchone()
     return row
 
+
 def init(bot):
     global walpha_url
     walpha_url = bot.config.get("wolframalpha.url")
@@ -85,6 +86,8 @@ def init(bot):
     admins = bot.config.get("discord.admins")
     global imgre
     imgre = re.compile(r".+Type=image/([a-zA-z]{3,4})&.+")
+    global unire
+    unire = re.compile(r"\\:([a-z0-9]{4})")
 
 
 def getanswer(client, qinput):
@@ -168,7 +171,7 @@ def main(self, message, *args, **kwargs):
                 if len(didyoumeans) < 1:
                     self.send(message.channel, "Can not understand question.")
                     return
-                self.send(message.channel, "Did you mean: %s." % ", ".join(didyoumeans))
+                self.send(message.channel, "Did you mean: %s?" % ", ".join(didyoumeans))
                 return
             delay["last"] = now + walpha_delay
             ans = []
@@ -190,6 +193,7 @@ def main(self, message, *args, **kwargs):
                     text = ""
                     if len(text_node.childNodes) > 0:
                         text = text_node.childNodes[0].data.encode('utf-8')
+                        text = unire.sub(lambda match: "{0}".format(unichr(int(match.group(1), 16))), text)
                     if len(img_node) > 0:
                         img_src = img_node[0].getAttribute('src')
                     if len(img_src) > 0:

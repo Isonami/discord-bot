@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env PATH=$PATH:/usr/local/sbin:/usr/local/bin python2.7
 import sys
 import threading
 from time import sleep
@@ -15,7 +15,7 @@ class MyDaemon(Daemon):
 
 
 if __name__ == "__main__":
-        daemon = MyDaemon("bot.pid")
+        daemon = MyDaemon(bot.PID)
         if len(sys.argv) == 2 or len(sys.argv) == 3:
                 if 'start' == sys.argv[1]:
                         daemon.start()
