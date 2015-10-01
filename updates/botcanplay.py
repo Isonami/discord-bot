@@ -20,9 +20,11 @@ def get_game_list(bot):
         # print response.body
         r = re.compile('<script src=\"([a-z0-9\./]+)\"></script>')
         m = r.findall(response.body)
-        response = bot.http_client.fetch(url_base.format(url=m[-1]), method="GET")
-        r = re.compile('executables:\{(?:(?:[a-z0-9]+:\[[^\]]+\])?\}?,)+id:([0-9]+),name:\"([^\"]+)\"')
-        return r.findall(response.body)
+        if len(m) > 0:
+            response = bot.http_client.fetch(url_base.format(url=m[-1]), method="GET")
+            r = re.compile('executables:\{(?:(?:[a-z0-9]+:\[[^\]]+\])?\}?,)+id:([0-9]+),name:\"([^\"]+)\"')
+            return r.findall(response.body)
+        return []
 
     except HTTPError as e:
         # HTTPError is raised for non-200 responses; the response
@@ -71,13 +73,19 @@ def botplayth(bot):
         games["list"] = get_game_list(bot)
         games["len"] = len(games["list"])
         sleep(60)
+    if len(games["list"]) < 1:
+        logger.error("Can not parse games list!")
+        return
     while not bot.disconect:
         if randint(1, play_chance) == 1:
             games["id"], name = games["list"][randint(0, games["len"]-1)]
             logger.debug("Set game to: %s", name)
             bot.client.keep_alive.payload['op'] = 3
         else:
+            payload = bot.client.keep_alive.payload
+            payload["d"] = {"idle_since": None, "game_id": None}
             bot.client.keep_alive.payload['op'] = 1
+            bot.client.keep_alive.socket.send(json.dumps(payload))
         sleep(play_delay)
 
 
