@@ -188,13 +188,13 @@ def main(self, message, *args, **kwargs):
                 for text_node in oneitem.getElementsByTagName('plaintext'):
                     img_node = oneitem.getElementsByTagName('img')
                     img_src = ""
-                    if len(text_node.childNodes) == 0 and len(img_node) == 0 :
+                    if len(text_node.childNodes) == 0 and len(img_node) == 0:
                         continue
                     text = ""
                     if len(text_node.childNodes) > 0:
-                        text = text_node.childNodes[0].data
-                        text = unire.sub(lambda match: "{0}".format(unichr(int(match.group(1), 16))), text)
-                        text = text.encode('utf-8')
+                        text = text_node.childNodes[0].data.encode('utf-8')
+                        text = unire.sub(lambda match: "{0}".format(unichr(int(match.group(1), 16)).encode('utf-8'))
+                                         , text)
                     if len(img_node) > 0:
                         img_src = img_node[0].getAttribute('src')
                     if len(img_src) > 0:

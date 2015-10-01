@@ -8,6 +8,7 @@ from time import sleep
 import os
 import re
 import modules
+import updates
 import config
 from commands import commands
 
@@ -166,6 +167,7 @@ def main():
     global http_client
     http_client = httpclient.HTTPClient()
     bot = Bot()
+    updates.init(bot)
     while not bot.disconect:
         sleep(60)
 
