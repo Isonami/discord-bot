@@ -82,8 +82,9 @@ def botplayth(bot):
             games["id"], name = games["list"][randint(0, games["len"]-1)]
             logger.debug("Set game to: %s", name)
             bot.client.keep_alive.payload['op'] = 3
-        else:
+        elif games["id"]:
             logger.debug("End game")
+            games["id"] = None
             bot.client.keep_alive.payload['op'] = 1
             payload = {"op": 3, "d": {"idle_since": None, "game_id": None}}
             bot.client.keep_alive.socket.send(json.dumps(payload))
