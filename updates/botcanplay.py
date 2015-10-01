@@ -72,7 +72,8 @@ def botplayth(bot):
     while not games["list"]:
         games["list"] = get_game_list(bot)
         games["len"] = len(games["list"])
-        sleep(60)
+        if not games["list"]:
+            sleep(60)
     if len(games["list"]) < 1:
         logger.error("Can not parse games list!")
         return
@@ -82,9 +83,9 @@ def botplayth(bot):
             logger.debug("Set game to: %s", name)
             bot.client.keep_alive.payload['op'] = 3
         else:
-            payload = bot.client.keep_alive.payload
-            payload["d"] = {"idle_since": None, "game_id": None}
+            logger.debug("End game")
             bot.client.keep_alive.payload['op'] = 1
+            payload = {"op": 3, "d": {"idle_since": None, "game_id": None}}
             bot.client.keep_alive.socket.send(json.dumps(payload))
         sleep(play_delay)
 
