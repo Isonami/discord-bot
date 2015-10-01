@@ -11,7 +11,7 @@ url_base = "https://discordapp.com/{url}"
 init_url = url_base.format(url="channels/@me")
 games = {"list": None, "id": 0}
 play_delay = 420
-play_chance = 1
+play_chance = 10
 
 
 def get_game_list(bot):
