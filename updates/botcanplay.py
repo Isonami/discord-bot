@@ -12,6 +12,7 @@ init_url = url_base.format(url="channels/@me")
 games = {"list": None, "id": 0}
 play_delay = 420
 play_chance = 10
+bot_play_th_started = False
 
 
 def get_game_list(bot):
@@ -35,6 +36,7 @@ def get_game_list(bot):
 class KeepAliveHandler(threading.Thread):
     def __init__(self, seconds, socket, **kwargs):
         threading.Thread.__init__(self, **kwargs)
+        self.botcanplay = True
         self.seconds = seconds
         self.socket = socket
         self.stop = threading.Event()
@@ -59,16 +61,8 @@ class KeepAliveHandler(threading.Thread):
 
 
 def botplayth(bot):
-    if not hasattr(bot.client, "keep_alive"):
-        sleep(5)
-    seconds = bot.client.keep_alive.seconds
-    bot.client.keep_alive.stop.set()
-    logger.debug("Stop old keepalive handler")
-    bot.client.keep_alive = KeepAliveHandler(1, bot.client.ws)
-    bot.client.keep_alive.start()
-    sleep(2)
-    bot.client.keep_alive.seconds = seconds
-    logger.debug("Start our keepalive handler")
+    global bot_play_th_started
+    bot_play_th_started = True
     while not games["list"]:
         games["list"] = get_game_list(bot)
         games["len"] = len(games["list"])
@@ -91,10 +85,28 @@ def botplayth(bot):
         sleep(play_delay)
 
 
+def bot_can_play_th(bot):
+    if not hasattr(bot.client, "keep_alive"):
+        sleep(5)
+    if hasattr(bot.client.keep_alive, "botcanplay"):
+        return
+    seconds = bot.client.keep_alive.seconds
+    bot.client.keep_alive.stop.set()
+    logger.debug("Stop old keepalive handler")
+    bot.client.keep_alive = KeepAliveHandler(1, bot.client.ws)
+    bot.client.keep_alive.start()
+    sleep(1)
+    bot.client.keep_alive.seconds = seconds
+    logger.debug("Start our keepalive handler")
+    if not bot_play_th_started:
+        cleaner_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))
+        cleaner_th.start()
+
+
 def init(bot):
     global play_delay
     play_delay = bot.config.get("botcanplay.delay", play_delay)
     global play_chance
     play_chance = bot.config.get("botcanplay.chance", play_chance)
-    cleaner_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))
-    cleaner_th.start()
+    bot.on_ready.append(bot_can_play_th)
+

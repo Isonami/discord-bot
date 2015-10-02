@@ -11,6 +11,7 @@ import modules
 import updates
 import config
 from commands import commands
+from threading import Thread
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -79,7 +80,9 @@ def server_status(client):
 class Bot:
     def __init__(self):
         self.config = config.Config()
+        self.on_ready = []
         modules.init(self)
+        updates.init(self)
         self.login = self.config.get("discord.login")
         self.password = self.config.get("discord.password")
         self.client = discord.Client()
@@ -108,6 +111,12 @@ class Bot:
         @self.client.event
         def on_ready():
             logger.debug('Logged in as %s (%s)', self.client.user.name, self.client.user.id)
+            for function in self.on_ready:
+                try:
+                    readyth = Thread(name="readyth_" + function.__name__, target=function, args=(self,))
+                    readyth.start()
+                except Exception, exc:
+                    logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
         @self.client.event
         def on_disconnect():
@@ -118,14 +127,18 @@ class Bot:
     def reconnect(self):
         self.client.logout()
         while not self.disconect:
-            if server_status(self.http_client):
-                logger.info('Reconnect attempt...')
-                self.client.login(self.login, self.password)
-                if self.client.is_logged_in:
-                    return
-                sleep(20)
-            else:
-                sleep(300)
+            try:
+                if server_status(self.http_client):
+                    logger.info('Reconnect attempt...')
+                    self.client.login(self.login, self.password)
+                    if self.client.is_logged_in:
+                        return
+                    sleep(20)
+                else:
+                    sleep(300)
+            except Exception, exc:
+                logger.error("%s: %s" % (exc.__class__.__name__, exc))
+                sleep(60)
 
     def send(self, channel, message):
         if type(message) is unicode:
@@ -167,7 +180,6 @@ def main():
     global http_client
     http_client = httpclient.HTTPClient()
     bot = Bot()
-    updates.init(bot)
     while not bot.disconect:
         sleep(60)
 
