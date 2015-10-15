@@ -8,6 +8,9 @@ from xml.dom import minidom
 import re
 import uuid
 from urllib import quote
+from threading import Thread
+from Queue import Queue, Empty
+from time import sleep
 
 
 walpha_url = None
@@ -17,6 +20,9 @@ walpha_static_url = None
 delay = {"last": 0}
 bot_dir = ""
 admins = []
+insql = Queue()
+outsql = {}
+sql_timeout = 30
 
 msg_template = """Question: {question}{qimg}
 
@@ -36,39 +42,69 @@ def check_xml_pod(pod):
 def init_db():
     try:
         logger.debug("Init DB connection")
-        global con, cur
         con = sqlite3.connect(path.join(bot_dir, "db", "cache.db"))
         cur = con.cursor()
         cur.executescript("""
             CREATE TABLE IF NOT EXISTS Cache(Question TEXT, Answer TEXT);
             """)
         con.commit()
+        return con, cur
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
 
+def sql_db(bot):
+    con, cur = init_db()
+    while not bot.disconnect:
+        try:
+            item = insql.get()
+        except Empty:
+            sleep(0.1)
+            continue
+        if item and "uuid" in item and "SQL" in item and "Type" in item and "Args" in item:
+            cur.execute(item["SQL"], item["Args"])
+            if item["Type"] == 1:
+                row = cur.fetchone()
+                outsql[item["uuid"]] = row
+            else:
+                con.commit()
+                outsql[item["uuid"]] = True
+
+
 def insert_db(question, answer):
-    if "con" not in globals() or "cur" not in globals() or not con or not cur:
-        init_db()
-    cur.execute("INSERT INTO Cache VALUES(?, ?);", (question, answer))
-    con.commit()
-    return True
+    cuuid = str(uuid.uuid1())
+    ans = {"uuid": cuuid, "SQL": "INSERT INTO Cache VALUES(?, ?);", "Type": 0, "Args": (question, answer)}
+    insql.put(ans)
+    n = 0
+    while n < sql_timeout * 10:
+        if cuuid in outsql:
+            return outsql[cuuid]
+        sleep(0.1)
+    return False
 
 
 def select_db(question):
-    if "con" not in globals() or "cur" not in globals() or not con or not cur:
-        init_db()
-    cur.execute("SELECT * FROM Cache WHERE Question = ?;", (question,))
-    row = cur.fetchone()
-    return row
+    cuuid = str(uuid.uuid1())
+    ans = {"uuid": cuuid, "SQL": "SELECT * FROM Cache WHERE Question = ?;", "Type": 1, "Args": (question,)}
+    insql.put(ans)
+    n = 0
+    while n < sql_timeout * 10:
+        if cuuid in outsql:
+            return outsql[cuuid]
+        sleep(0.1)
+    return False
 
 
 def delete_db(question):
-    if "con" not in globals() or "cur" not in globals() or not con or not cur:
-        init_db()
-    cur.execute("DELETE FROM Cache WHERE Question = ?;", (question,))
-    row = cur.fetchone()
-    return row
+    cuuid = str(uuid.uuid1())
+    ans = {"uuid": cuuid, "SQL": "DELETE FROM Cache WHERE Question = ?;", "Type": 1, "Args": (question,)}
+    insql.put(ans)
+    n = 0
+    while n < sql_timeout * 10:
+        if cuuid in outsql:
+            return outsql[cuuid]
+        sleep(0.1)
+    return False
 
 
 def init(bot):
@@ -88,6 +124,8 @@ def init(bot):
     imgre = re.compile(r".+Type=image/([a-zA-z]{3,4})&.+")
     global unire
     unire = re.compile(r"\\:([a-z0-9]{4})")
+    sql_th = Thread(name="WAlphaSQL", target=sql_db, args=(bot,))
+    sql_th.start()
 
 
 def getanswer(client, qinput):

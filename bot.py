@@ -81,13 +81,13 @@ class Bot:
     def __init__(self):
         self.config = config.Config()
         self.on_ready = []
+        self.disconnect = False
         modules.init(self)
         updates.init(self)
         self.login = self.config.get("discord.login")
         self.password = self.config.get("discord.password")
         self.client = discord.Client()
         self.client.login(self.login, self.password)
-        self.disconect = False
         self.cmds = {}
         self.desc = []
         self.ifnfo_line = ifnfo_line % self.config.get("version")
@@ -120,13 +120,13 @@ class Bot:
 
         @self.client.event
         def on_disconnect():
-            if not self.disconect:
+            if not self.disconnect:
                 logger.debug('Reconnecting')
                 self.reconnect()
 
     def reconnect(self):
         self.client.logout()
-        while not self.disconect:
+        while not self.disconnect:
             try:
                 if server_status(self.http_client):
                     logger.info('Reconnect attempt...')
@@ -180,7 +180,7 @@ def main():
     global http_client
     http_client = httpclient.HTTPClient()
     bot = Bot()
-    while not bot.disconect:
+    while not bot.disconnect:
         sleep(60)
 
 if __name__ == "__main__":
