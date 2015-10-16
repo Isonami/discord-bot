@@ -120,9 +120,10 @@ class Bot:
 
         @self.client.event
         def on_disconnect():
-            if not self.disconnect:
-                logger.debug('Reconnecting')
-                self.reconnect()
+            pass
+            # if not self.disconnect:
+            #    logger.debug('Reconnecting')
+            #    self.reconnect()
 
     def reconnect(self):
         self.client.logout()
@@ -180,8 +181,9 @@ def main():
     global http_client
     http_client = httpclient.HTTPClient()
     bot = Bot()
-    while not bot.disconnect:
-        sleep(60)
+    bot.client.run()
+    # while not bot.disconnect:
+    #    sleep(60)
 
 if __name__ == "__main__":
     main()

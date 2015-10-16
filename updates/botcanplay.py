@@ -71,32 +71,32 @@ def botplayth(bot):
     if len(games["list"]) < 1:
         logger.error("Can not parse games list!")
         return
-    while not bot.disconect:
+    while not bot.disconnect:
         if randint(1, play_chance) == 1:
             games["id"], name = games["list"][randint(0, games["len"]-1)]
             logger.debug("Set game to: %s", name)
-            bot.client.keep_alive.payload['op'] = 3
+            bot.client.ws.keep_alive.payload['op'] = 3
         elif games["id"]:
             logger.debug("End game")
             games["id"] = None
-            bot.client.keep_alive.payload['op'] = 1
+            bot.client.ws.keep_alive.payload['op'] = 1
             payload = {"op": 3, "d": {"idle_since": None, "game_id": None}}
-            bot.client.keep_alive.socket.send(json.dumps(payload))
+            bot.client.ws.keep_alive.socket.send(json.dumps(payload))
         sleep(play_delay)
 
 
 def bot_can_play_th(bot):
-    if not hasattr(bot.client, "keep_alive"):
+    if not hasattr(bot.client.ws, "keep_alive"):
         sleep(5)
-    if hasattr(bot.client.keep_alive, "botcanplay"):
+    if hasattr(bot.client.ws.keep_alive, "botcanplay"):
         return
-    seconds = bot.client.keep_alive.seconds
-    bot.client.keep_alive.stop.set()
+    seconds = bot.client.ws.keep_alive.seconds
+    bot.client.ws.keep_alive.stop.set()
     logger.debug("Stop old keepalive handler")
-    bot.client.keep_alive = KeepAliveHandler(1, bot.client.ws)
-    bot.client.keep_alive.start()
+    bot.client.ws.keep_alive = KeepAliveHandler(1, bot.client.ws)
+    bot.client.ws.keep_alive.start()
     sleep(1)
-    bot.client.keep_alive.seconds = seconds
+    bot.client.ws.keep_alive.seconds = seconds
     logger.debug("Start our keepalive handler")
     if not bot_play_th_started:
         cleaner_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))

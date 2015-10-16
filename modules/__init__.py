@@ -2,6 +2,7 @@
 import help
 import exchangerates
 import wolframalpha
+import random_num
 
 
 from types import ModuleType

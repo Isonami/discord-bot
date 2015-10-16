@@ -36,6 +36,9 @@ def check_xml_pod(pod):
         return True
     if pod.hasAttribute('title') and (pod.getAttribute('title') == 'Plot' or pod.getAttribute('title') == 'Plots'):
         return True
+    if pod.hasAttribute('title') and pod.hasAttribute('id') and pod.getAttribute('title').startswith("Basic")\
+            and pod.getAttribute('id').startswith("Basic"):
+        return True
     return False
 
 
