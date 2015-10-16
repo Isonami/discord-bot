@@ -95,7 +95,7 @@ def select_db(question):
         if cuuid in outsql:
             return outsql[cuuid]
         sleep(0.1)
-    return False
+    return None
 
 
 def delete_db(question):
@@ -191,6 +191,7 @@ def main(self, message, *args, **kwargs):
             else:
                 self.send(message.channel, "You are not an admin")
                 return
+        self.typing(message.channel)
         row = select_db(question.lower())
         if row:
             logger.debug("Found cache: %s", row[1])

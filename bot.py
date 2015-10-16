@@ -12,6 +12,7 @@ import updates
 import config
 from commands import commands
 from threading import Thread
+import discord.endpoints as endpoints
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -166,6 +167,18 @@ class Bot:
                         command(self, message, *args, **kwargs)
         except Exception, exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
+
+    def typing(self, channel):
+        if channel:
+            if hasattr(channel, 'id'):
+                url = "{0}/{1}/typing".format(endpoints.CHANNELS, channel.id)
+                try:
+                    logger.debug("Send 'typing' status to server")
+                    self.http_client.fetch(url, method="POST", headers=self.client.headers, body="")
+                    return True
+                except httpclient.HTTPError as e:
+                    logger.error("HTTPError: " + str(e))
+        return False
 
 
 def main():
