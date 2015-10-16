@@ -24,9 +24,9 @@ insql = Queue()
 outsql = {}
 sql_timeout = 30
 
-msg_template = """Question: {question}{qimg}
+msg_template_q = """Question: {question}{qimg}"""
 
-Answer: {answer}{img}"""
+msg_template_a = """Answer: {answer}{img}"""
 
 logger = logging.getLogger(__name__)
 
@@ -240,8 +240,10 @@ def main(self, message, *args, **kwargs):
                         img_src = img_node[0].getAttribute('src')
                     if len(img_src) > 0:
                         img_src = "\n" + getimage(self.http_client, img_src.replace("&amp;", "&"))
-                    ans.append(msg_template.format(question=question, answer=text, img=img_src, qimg=qimg))
+                    ans.append(msg_template_q.format(question=question, qimg=qimg))
+                    ans.append(msg_template_a.format(answer=text, img=img_src))
             insert_db(question.lower(), json.dumps(ans))
-        self.send(message.channel, "\n\n".join(ans))
+        for oneans in ans:
+            self.send(message.channel, oneans)
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
