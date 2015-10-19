@@ -5,9 +5,10 @@ import threading
 from tornado.httpclient import HTTPError
 import re
 from random import randint
+import discord.endpoints as endpoints
 
 logger = logging.getLogger(__name__)
-url_base = "https://discordapp.com/{url}"
+url_base = endpoints.BASE + "/{url}"
 init_url = url_base.format(url="channels/@me")
 games = {"list": None, "id": 0}
 play_delay = 420
@@ -109,4 +110,3 @@ def init(bot):
     global play_chance
     play_chance = bot.config.get("botcanplay.chance", play_chance)
     bot.on_ready.append(bot_can_play_th)
-
