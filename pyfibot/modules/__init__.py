@@ -20,7 +20,7 @@ def makefunck(bot, obj, var):
     return f
 
 
-def init(bot, commands):
+def init(bot, commands, cmd_opt):
     try:
         for key, obj in modules[__name__].__dict__.iteritems():
             if isinstance(obj, ModuleType):
@@ -30,9 +30,13 @@ def init(bot, commands):
                     for var in all_vars:
                         if var.startswith(base):
                             cmd_name = var[len(base):]
-                            cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_name, var)
                             fnk = makefunck(bot, obj, var)
-                            desk = "{cmd_start}%s - pyfibot command " % cmd_name
+                            if cmd_name in cmd_opt:
+                                cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_opt[cmd_name][0], var)
+                                desk = "{cmd_start}%s" % cmd_opt[cmd_name][1]
+                            else:
+                                cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_name, var)
+                                desk = "{cmd_start}%s - pyfibot command " % cmd_name
                             commands.append((cmd, fnk, cmd_name, desk))
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
