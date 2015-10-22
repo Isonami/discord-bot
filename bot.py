@@ -59,18 +59,21 @@ ifnfo_line = """Nedo bot version %s
 by Isonami (github.com/Isonami/discord-bot)"""
 cmd_start = "."
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
+SIGTERM_SENT = False
 
 
 def sigterm_handler(_signo, _stack_frame):
     try:
+        logger.info("Stopping...")
         if "bot" in globals():
             bot.disconnect = True
             bot.client.logout()
         global SIGTERM_SENT
         if not SIGTERM_SENT:
             SIGTERM_SENT = True
-            logger.info("Sending TERM to PG")
-            os.killpg(os.getpgrp(), signal.SIGTERM)
+            if hasattr(os, "killpg"):
+                logger.info("Sending TERM to PG")
+                os.killpg(os.getpgrp(), signal.SIGTERM)
         exit(0)
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
@@ -142,6 +145,7 @@ class Bot:
             for function in self.on_ready:
                 try:
                     readyth = Thread(name="readyth_" + function.__name__, target=function, args=(self,))
+                    readyth.daemon = True
                     readyth.start()
                 except Exception, exc:
                     logger.error("%s: %s" % (exc.__class__.__name__, exc))
@@ -222,10 +226,14 @@ def main():
     http_client = httpclient.HTTPClient()
     global bot
     bot = Bot()
-    bot.client.run()
-    # while not bot.disconnect:
-    #    sleep(60)
+    th = Thread(name="Bot", target=bot.client.run)
+    th.daemon = True
+    th.start()
+    while not bot.disconnect:
+        sleep(60)
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigterm_handler)
+    signal.signal(signal.SIGTERM, sigterm_handler)
     main()
 

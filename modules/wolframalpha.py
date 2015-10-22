@@ -128,6 +128,7 @@ def init(bot):
     global unire
     unire = re.compile(r"\\:([a-z0-9]{4})")
     sql_th = Thread(name="WAlphaSQL", target=sql_db, args=(bot,))
+    sql_th.daemon = True
     sql_th.start()
 
 
