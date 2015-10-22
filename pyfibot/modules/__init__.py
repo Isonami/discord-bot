@@ -13,9 +13,7 @@ pymods = []
 
 def main():
     fpath = os.path.dirname(os.path.realpath(__file__))
-    print fpath
     for mfile in os.listdir(fpath):
-        print mfile
         mod_name, file_ext = os.path.splitext(mfile)
         if mod_name.startswith(mbase):
             if file_ext.lower() == '.py':
@@ -33,7 +31,7 @@ def makefunck(bot, obj, var):
     return f
 
 
-def init(bot, commands, cmd_opt):
+def init(bot, commands, cmd_opt, ban_cmd):
     try:
         for obj in pymods:
             if hasattr(obj, "init"):
@@ -42,6 +40,8 @@ def init(bot, commands, cmd_opt):
                 for var in all_vars:
                     if var.startswith(base):
                         cmd_name = var[len(base):]
+                        if cmd_name in ban_cmd:
+                            continue
                         fnk = makefunck(bot, obj, var)
                         if cmd_name in cmd_opt:
                             cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_opt[cmd_name][0], var)
