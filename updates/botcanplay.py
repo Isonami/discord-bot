@@ -41,10 +41,7 @@ class KeepAliveHandler(threading.Thread):
         self.seconds = seconds
         self.socket = socket
         self.stop = threading.Event()
-        self.payload = {
-                'op': 1,
-                'd': int(time())
-            }
+        self.payload = {"op": 3, "d": {"idle_since": None, "game_id": None}}
 
     def run(self):
         while not self.stop.wait(self.seconds):
@@ -99,6 +96,8 @@ def bot_can_play_th(bot):
     sleep(1)
     bot.client.ws.keep_alive.seconds = seconds
     logger.debug("Start our keepalive handler")
+    payload = {"op": 3, "d": {"idle_since": None, "game_id": None}}
+    bot.client.ws.keep_alive.socket.send(json.dumps(payload))
     if not bot_play_th_started:
         cleaner_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))
         cleaner_th.start()
