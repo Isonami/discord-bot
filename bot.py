@@ -63,10 +63,11 @@ status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
 
 def sigterm_handler(_signo, _stack_frame):
     try:
-        logger.info("Stopping...")
-        if "bot" in globals() and not bot.disconnect:
-            bot.disconnect = True
+        if "bot" in globals() and not bot.disconnect and not bot.stopping:
+            logger.info("Stopping...")
+            bot.stopping = True
             bot.client.logout()
+            bot.disconnect = True
         sys.exit(0)
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
