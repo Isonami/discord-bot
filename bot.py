@@ -208,12 +208,16 @@ class Bot:
     def logout(self):
         try:
             logger.debug("Logout from server")
-            self.http_client.fetch(endpoints.LOGOUT, method="GET", headers=self.client.headers, body="")
+            self.http_client.fetch(endpoints.LOGOUT, method="GET", headers=self.client.headers, body="",
+                                   request_timeout=5)
             self.client._close = True
             self.client.ws.close()
             self.client._is_logged_in = False
         except httpclient.HTTPError as e:
             logger.error("HTTPError: " + str(e))
+            self.client._close = True
+            self.client.ws.close()
+            self.client._is_logged_in = False
 
 
 def main():
