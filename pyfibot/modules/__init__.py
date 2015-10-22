@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import imp
 import os
-from types import ModuleType
-from sys import modules
 import logging
 
 logger = logging.getLogger(__name__)

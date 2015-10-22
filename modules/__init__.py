@@ -3,6 +3,7 @@ import help
 import exchangerates
 import wolframalpha
 import random_num
+import usersid
 
 
 from types import ModuleType
