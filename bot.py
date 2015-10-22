@@ -67,6 +67,8 @@ def sigterm_handler(_signo, _stack_frame):
             logger.info("Stopping...")
             bot.stopping = True
             bot.client.logout()
+            while bot.client._is_logged_in:
+                sleep(0.1)
             bot.disconnect = True
         sys.exit(0)
     except Exception, exc:

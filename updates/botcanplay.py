@@ -99,6 +99,7 @@ def bot_can_play_th(bot):
     logger.debug("Start our keepalive handler")
     if not bot_play_th_started:
         bot_play_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))
+        bot_play_th.daemon = True
         bot_play_th.start()
 
 
