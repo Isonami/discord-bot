@@ -4,12 +4,14 @@ import threading
 from time import sleep
 from daemon import Daemon
 import bot
+import signal
 
 
 class MyDaemon(Daemon):
     def run(self):
         sctl_daemon = threading.Thread(name='BotProccess', target=bot.main)
         sctl_daemon.start()
+        signal.signal(signal.SIGTERM, bot.sigterm_handler)
         while True:
             sleep(1)
 

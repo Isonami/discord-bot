@@ -14,6 +14,8 @@ import config
 from commands import commands
 from threading import Thread
 import discord.endpoints as endpoints
+import signal
+from sys import exit
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -57,6 +59,22 @@ ifnfo_line = """Nedo bot version %s
 by Isonami (github.com/Isonami/discord-bot)"""
 cmd_start = "."
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
+
+
+def sigterm_handler(_signo, _stack_frame):
+    try:
+        if "bot" in globals():
+            bot.disconnect = True
+            bot.client.logout()
+        global SIGTERM_SENT
+        if not SIGTERM_SENT:
+            SIGTERM_SENT = True
+            logger.info("Sending TERM to PG")
+            os.killpg(os.getpgrp(), signal.SIGTERM)
+        exit(0)
+    except Exception, exc:
+        logger.error("%s: %s" % (exc.__class__.__name__, exc))
+        return None, None
 
 
 def server_status(client):
@@ -202,6 +220,7 @@ def main():
     logger = logging.getLogger(__name__)
     global http_client
     http_client = httpclient.HTTPClient()
+    global bot
     bot = Bot()
     bot.client.run()
     # while not bot.disconnect:

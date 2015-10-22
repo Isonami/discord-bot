@@ -78,8 +78,6 @@ def botplayth(bot):
             logger.debug("End game")
             games["id"] = None
             bot.client.ws.keep_alive.payload['op'] = 1
-            payload = {"op": 3, "d": {"idle_since": None, "game_id": None}}
-            bot.client.ws.keep_alive.socket.send(json.dumps(payload))
         sleep(play_delay)
 
 
