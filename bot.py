@@ -223,7 +223,7 @@ def main():
     th.daemon = True
     th.start()
     while not bot.disconnect:
-        sleep(60)
+        sleep(1)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigterm_handler)
