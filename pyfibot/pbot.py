@@ -71,6 +71,14 @@ class Pbot:
         self.parent = bot
         self.say = bot.send
         self.config = Config(bot)
+        self.admins = bot.config.get("discord.admins")
+
+    @staticmethod
+    def getNick(user):
+        return user.name
+
+    def isAdmin(self, user):
+        return user.id in self.admins
 
     def get_url(self, url, nocache=False, params=None, headers=None, cookies=None):
         return geturl(self.http_client, url, nocache, params, headers, cookies)
