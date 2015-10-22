@@ -1,12 +1,25 @@
 # -*- coding: utf-8 -*-
-import module_openweather
-
+import imp
+import os
 from types import ModuleType
 from sys import modules
 import logging
 
 logger = logging.getLogger(__name__)
 base = "command_"
+mbase = "module_"
+pymods = []
+
+
+def main():
+    fpath = os.path.dirname(os.path.realpath(__file__))
+    print fpath
+    for mfile in os.listdir(fpath):
+        print mfile
+        mod_name, file_ext = os.path.splitext(mfile)
+        if mod_name.startswith(mbase):
+            if file_ext.lower() == '.py':
+                pymods.append(imp.load_source(mod_name, os.path.join(fpath, mfile)))
 
 
 def makefunck(bot, obj, var):
@@ -22,22 +35,23 @@ def makefunck(bot, obj, var):
 
 def init(bot, commands, cmd_opt):
     try:
-        for key, obj in modules[__name__].__dict__.iteritems():
-            if isinstance(obj, ModuleType):
-                if hasattr(obj, "init"):
-                    obj.init(bot)
-                    all_vars = vars(obj)
-                    for var in all_vars:
-                        if var.startswith(base):
-                            cmd_name = var[len(base):]
-                            fnk = makefunck(bot, obj, var)
-                            if cmd_name in cmd_opt:
-                                cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_opt[cmd_name][0], var)
-                                desk = "{cmd_start}%s" % cmd_opt[cmd_name][1]
-                            else:
-                                cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_name, var)
-                                desk = "{cmd_start}%s - pyfibot command " % cmd_name
-                            commands.append((cmd, fnk, cmd_name, desk))
+        for obj in pymods:
+            if hasattr(obj, "init"):
+                obj.init(bot)
+                all_vars = vars(obj)
+                for var in all_vars:
+                    if var.startswith(base):
+                        cmd_name = var[len(base):]
+                        fnk = makefunck(bot, obj, var)
+                        if cmd_name in cmd_opt:
+                            cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_opt[cmd_name][0], var)
+                            desk = "{cmd_start}%s" % cmd_opt[cmd_name][1]
+                        else:
+                            cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_name, var)
+                            desk = "{cmd_start}%s - pyfibot command " % cmd_name
+                        commands.append((cmd, fnk, cmd_name, desk))
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
         raise
+
+main()
