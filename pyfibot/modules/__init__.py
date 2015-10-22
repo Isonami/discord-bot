@@ -45,10 +45,10 @@ def init(bot, commands, cmd_opt, ban_cmd):
                             continue
                         fnk = makefunck(bot, obj, var)
                         if cmd_name in cmd_opt:
-                            cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_opt[cmd_name][0], var)
+                            cmd = r"%s(?: (?P<%s>.+))?" % (cmd_opt[cmd_name][0], var)
                             desk = "{cmd_start}%s" % cmd_opt[cmd_name][1]
                         else:
-                            cmd = r"%s(?: (?P<%s>.+)$)?" % (cmd_name, var)
+                            cmd = r"%s(?: (?P<%s>.+))?" % (cmd_name, var)
                             desk = "{cmd_start}%s - pyfibot command " % cmd_name
                         commands.append((cmd, fnk, cmd_name, desk))
     except Exception, exc:

@@ -109,6 +109,7 @@ class Bot:
             if len(desk) > 0:
                 self.desc.append(desk.format(cmd_start=cmd_start))
             all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
+        logger.debug("Regex: %s", all_reg[:-1])
         self.reg = re.compile(all_reg[:-1])
 
         @self.client.event
