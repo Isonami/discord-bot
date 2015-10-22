@@ -53,7 +53,8 @@ LOGGING = {
     }
 }
 logging_file_name = "logging.json"
-ifnfo_line = "Nedo bot version %s"
+ifnfo_line = """Nedo bot version %s
+by Isonami (github.com/Isonami/discord-bot)"""
 cmd_start = "."
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
 
