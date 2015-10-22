@@ -1,7 +1,7 @@
 import os.path as path
 import logging
 import json
-VERSION = "1.0.1"
+VERSION = "2.0.0"
 PID = "/var/run/discord-bot/bot.pid"
 CONFIG = {
     "discord": {
