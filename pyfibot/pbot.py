@@ -72,6 +72,7 @@ class Pbot:
         self.say = bot.send
         self.config = Config(bot)
         self.admins = bot.config.get("discord.admins")
+        self.globals = ["getNick", "isAdmin"]
 
     @staticmethod
     def getNick(user):

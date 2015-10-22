@@ -34,6 +34,9 @@ def makefunck(bot, obj, var):
 def init(bot, commands, cmd_opt, ban_cmd):
     try:
         for obj in pymods:
+            for gl in bot.globals:
+                if hasattr(bot, gl):
+                    setattr(obj, gl, getattr(bot, gl))
             if hasattr(obj, "init"):
                 obj.init(bot)
                 all_vars = vars(obj)
