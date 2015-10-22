@@ -9,6 +9,7 @@ import os
 import re
 import modules
 import updates
+import pyfibot
 import config
 from commands import commands
 from threading import Thread
@@ -93,6 +94,7 @@ class Bot:
         self.desc = []
         self.ifnfo_line = ifnfo_line % self.config.get("version")
         self.http_client = http_client
+        pcommands = pyfibot.init(self)
         all_reg = r""
         for reg, cmd_name, desk in commands:
             if hasattr(modules, cmd_name):
@@ -102,6 +104,11 @@ class Bot:
                     if len(desk) > 0:
                         self.desc.append(desk.format(cmd_start=cmd_start))
                     all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
+        for reg, cmd, cmd_name, desk in pcommands:
+            self.cmds[cmd_name] = cmd
+            if len(desk) > 0:
+                self.desc.append(desk.format(cmd_start=cmd_start))
+            all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
         self.reg = re.compile(all_reg[:-1])
 
         @self.client.event
