@@ -231,7 +231,7 @@ def main():
     global bot
     bot = Bot()
     th = Thread(name="Bot", target=bot.client.run)
-    th.daemon = True
+    # th.daemon = True
     th.start()
     while not bot.disconnect:
         sleep(1)
