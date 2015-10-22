@@ -15,7 +15,7 @@ from commands import commands
 from threading import Thread
 import discord.endpoints as endpoints
 import signal
-from sys import exit
+import sys
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -59,22 +59,15 @@ ifnfo_line = """Nedo bot version %s
 by Isonami (github.com/Isonami/discord-bot)"""
 cmd_start = "."
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
-SIGTERM_SENT = False
 
 
 def sigterm_handler(_signo, _stack_frame):
     try:
         logger.info("Stopping...")
-        if "bot" in globals():
+        if "bot" in globals() and not bot.disconnect:
             bot.disconnect = True
             bot.client.logout()
-        global SIGTERM_SENT
-        if not SIGTERM_SENT:
-            SIGTERM_SENT = True
-            if hasattr(os, "killpg"):
-                logger.info("Sending TERM to PG")
-                os.killpg(os.getpgrp(), signal.SIGTERM)
-        exit(0)
+        sys.exit(0)
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
         return None, None
