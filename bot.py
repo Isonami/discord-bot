@@ -66,9 +66,7 @@ def sigterm_handler(_signo, _stack_frame):
         if "bot" in globals() and not bot.disconnect and (not hasattr(bot, "stopping") or not bot.stopping):
             logger.info("Stopping...")
             bot.stopping = True
-            bot.client.logout()
-            while bot.client._is_logged_in:
-                sleep(0.1)
+            bot.logout()
             bot.disconnect = True
         sys.exit(0)
     except Exception, exc:
@@ -206,6 +204,16 @@ class Bot:
                 except httpclient.HTTPError as e:
                     logger.error("HTTPError: " + str(e))
         return False
+
+    def logout(self):
+        try:
+            logger.debug("Logout from server")
+            self.http_client.fetch(endpoints.LOGOUT, method="GET", headers=self.client.headers, body="")
+            self.client._close = True
+            self.client.ws.close()
+            self.client._is_logged_in = False
+        except httpclient.HTTPError as e:
+            logger.error("HTTPError: " + str(e))
 
 
 def main():
