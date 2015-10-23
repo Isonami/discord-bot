@@ -15,7 +15,7 @@ def init(bot):
 def restart():
     pid = os.fork()
     if pid == 0:
-        os.system("nohup %s &" % sys.executable)
+        os.system("nohup %s >/dev/null 2>&1 &" % sys.executable)
         exit()
 
 
