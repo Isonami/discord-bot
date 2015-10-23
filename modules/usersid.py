@@ -13,7 +13,7 @@ def init(bot):
 def main(self, message, *args, **kwargs):
     try:
         if message.author.id in admins and message.channel.is_private:
-            server_name = kwargs["server_name"].lower()
+            server_name = kwargs["server_name"]
             for server in self.client.servers:
                 if server.name.lower() == server_name:
                     ans = []

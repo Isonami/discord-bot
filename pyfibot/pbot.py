@@ -2,6 +2,7 @@
 from tornado.httpclient import HTTPError
 import json
 import logging
+from urllib import quote
 NAME = "pyfibot"
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def geturl(client, url, nocache=False, params=None, headers=None, cookies=None):
             if not headers:
                 headers = {}
             headers = {"Cookie": cookies}
-        response = client.fetch(url, method=method, headers=headers, body=params)
+        response = client.fetch(quote(url), method=method, headers=headers, body=params)
         logger.debug("Response: %s", response.body)
         return Response(response)
     except HTTPError as e:

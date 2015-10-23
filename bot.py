@@ -10,6 +10,7 @@ import re
 import modules
 import updates
 import pyfibot
+from pyfibot.pbot import NAME as PBOTNAME
 import config
 from commands import commands
 from threading import Thread
@@ -120,12 +121,16 @@ class Bot:
                 if hasattr(module, "main"):
                     self.cmds[cmd_name] = getattr(module, "main")
                     if len(desk) > 0:
+                        desk = self.config.get(".".join([cmd_name, "description"]), desk)
                         self.desc.append(desk.format(cmd_start=cmd_start))
+                    reg = self.config.get(".".join([cmd_name, "regex"]), reg)
                     all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
         for reg, cmd, cmd_name, desk in pcommands:
             self.cmds[cmd_name] = cmd
             if len(desk) > 0:
+                desk = self.config.get(".".join([PBOTNAME, cmd_name, "description"]), desk)
                 self.desc.append(desk.format(cmd_start=cmd_start))
+            reg = self.config.get(".".join([PBOTNAME, cmd_name, "regex"]), reg)
             all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
         logger.debug("Regex: %s", all_reg[:-1])
         self.reg = re.compile(all_reg[:-1])
