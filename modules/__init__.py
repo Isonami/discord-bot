@@ -5,6 +5,7 @@ import wolframalpha
 import random_num
 import usersid
 import restart
+import uptime
 
 
 from types import ModuleType

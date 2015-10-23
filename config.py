@@ -1,6 +1,7 @@
 import os.path as path
 import logging
 import json
+from datetime import datetime
 VERSION = "2.0.2"
 PID = "/var/run/discord-bot/bot.pid"
 CONFIG = {
@@ -53,6 +54,7 @@ class Config:
         if "config_data" in locals():
             split_path(locals()["config_data"], None)
         self.set("main.dir", main_dir)
+        self.set("main.start_time", datetime.now())
         self.set("version", VERSION)
 
     def set(self, var, value):
