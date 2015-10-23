@@ -15,8 +15,11 @@ def init(bot):
 def restart():
     pid = os.fork()
     if pid == 0:
-        os.system("nohup %s >/dev/null 2>&1 &" % sys.executable)
-        exit()
+        try:
+            os.system("nohup %s >/dev/null 2>&1 &" % sys.executable)
+            exit()
+        except Exception, exc:
+            logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
 
 def main(self, message, *args, **kwargs):
