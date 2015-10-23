@@ -22,6 +22,9 @@ CONFIG = {
         "delay": 60,
         "static_url": None,
     },
+    "restart": {
+        "command": None
+    }
 }
 
 

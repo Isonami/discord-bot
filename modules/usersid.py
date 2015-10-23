@@ -6,13 +6,12 @@ user_ans_template = "User:{username} ID:{id}"
 
 
 def init(bot):
-    global admins
-    admins = bot.config.get("discord.admins")
+    pass
 
 
 def main(self, message, *args, **kwargs):
     try:
-        if message.author.id in admins and message.channel.is_private:
+        if self.is_admin(message.author) and message.channel.is_private:
             server_name = kwargs["server_name"]
             for server in self.client.servers:
                 if server.name.lower() == server_name:

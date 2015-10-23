@@ -101,6 +101,7 @@ def server_status(client):
 class Bot:
     def __init__(self):
         self.config = config.Config()
+        self.admins = bot.config.get("discord.admins", [])
         self.on_ready = []
         self.disconnect = False
         modules.init(self)
@@ -224,6 +225,9 @@ class Bot:
         self.client._close = True
         self.client.ws.close()
         self.client._is_logged_in = False
+
+    def is_admin(self, user):
+        return user.id in self.admins
 
 
 def main():

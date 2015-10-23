@@ -19,7 +19,6 @@ walpha_appid = None
 walpha_static_url = None
 delay = {"last": 0}
 bot_dir = ""
-admins = []
 insql = Queue()
 outsql = {}
 sql_timeout = 30
@@ -121,8 +120,6 @@ def init(bot):
     walpha_delay = bot.config.get("wolframalpha.delay", walpha_delay)
     global bot_dir
     bot_dir = bot.config.get("main.dir")
-    global admins
-    admins = bot.config.get("discord.admins")
     global imgre
     imgre = re.compile(r".+Type=image/([a-zA-z]{3,4})&.+")
     global unire
@@ -185,7 +182,7 @@ def main(self, message, *args, **kwargs):
             logger.error("Can not parse question!")
             return
         if "clear" in kwargs and kwargs["clear"]:
-            if message.author.id in admins:
+            if self.is_admin(message.author):
                 delete_db(question.lower())
                 self.send(message.channel, "Question %s removed from cache" % question)
                 return

@@ -4,6 +4,7 @@ import exchangerates
 import wolframalpha
 import random_num
 import usersid
+import restart
 
 
 from types import ModuleType
