@@ -234,16 +234,27 @@ def main():
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
     if os.path.exists(json_file):
-        with open(json_file) as json_config:
-            global LOGGING
-            LOGGING = json.load(json_config)
+        try:
+            with open(json_file) as json_config:
+                global LOGGING
+                LOGGING = json.load(json_config)
+        except IOError as e:
+            print "Can not open logging.json file: %s" % str(e)
+            exit()
+        except ValueError as e:
+            print "Can not open load json logging file: %s" % str(e)
+            exit()
     logging.config.dictConfig(LOGGING)
     global logger
     logger = logging.getLogger(__name__)
     global http_client
     http_client = httpclient.HTTPClient()
     global bot
-    bot = Bot()
+    try:
+        bot = Bot()
+    except Exception, exc:
+        logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
+        exit()
     th = Thread(name="Bot", target=bot.client.run)
     th.daemon = True
     th.start()

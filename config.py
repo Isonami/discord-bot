@@ -2,7 +2,7 @@ import os.path as path
 import logging
 import json
 from datetime import datetime
-VERSION = "2.0.2"
+VERSION = "2.0.3"
 PID = "/var/run/discord-bot/bot.pid"
 CONFIG = {
     "discord": {
@@ -38,8 +38,13 @@ class Config:
         main_dir = path.dirname(path.realpath(__file__))
         json_file = path.join(main_dir, config_file_name)
         if path.exists(json_file):
-            with open(json_file) as json_config:
-                config_data = json.load(json_config)
+            try:
+                with open(json_file) as json_config:
+                    config_data = json.load(json_config)
+            except IOError as e:
+                logger.error("Can not open config file: %s", str(e))
+            except ValueError as e:
+                logger.error("Can not load json config file: %s", str(e))
 
         def split_path(config_var, strpath):
             for key, value in config_var.iteritems():
