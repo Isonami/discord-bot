@@ -16,7 +16,7 @@ def restart():
     pid = os.fork()
     if pid == 0:
         try:
-            os.system("nohup %s >/dev/null 2>&1 &" % sys.executable)
+            os.system("nohup %s >/dev/null 2>&1 &" % command)
             exit()
         except Exception, exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
