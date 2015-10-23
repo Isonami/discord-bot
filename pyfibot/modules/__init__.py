@@ -29,7 +29,7 @@ def makefunck(bot, obj, var):
     return f
 
 
-def init(bot, commands, cmd_opt, ban_cmd):
+def init(bot, commands):
     try:
         for obj in pymods:
             for gl in bot.globals:
@@ -41,16 +41,13 @@ def init(bot, commands, cmd_opt, ban_cmd):
                 for var in all_vars:
                     if var.startswith(base):
                         cmd_name = var[len(base):]
-                        if cmd_name in ban_cmd:
+                        mod_name = obj.__name__
+                        if cmd_name in bot.config.get(".".join([mod_name, cmd_name, "ban_cmd"]), []):
                             continue
                         fnk = makefunck(bot, obj, var)
-                        if cmd_name in cmd_opt:
-                            cmd = r"%s(?: (?P<%s>.+))?" % (cmd_opt[cmd_name][0], var)
-                            desk = "{cmd_start}%s" % cmd_opt[cmd_name][1]
-                        else:
-                            cmd = r"%s(?: (?P<%s>.+))?" % (cmd_name, var)
-                            desk = "{cmd_start}%s - pyfibot command " % cmd_name
-                        commands.append((cmd, fnk, cmd_name, desk))
+                        cmd = r"%s(?: (?P<%s>.+))?" % (cmd_name, var)
+                        desk = "{cmd_start}%s - pyfibot command " % cmd_name
+                        commands.append((cmd, fnk, cmd_name, mod_name, desk))
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
         raise

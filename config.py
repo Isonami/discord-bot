@@ -78,7 +78,7 @@ class Config:
                 else:
                     if action_type == "set":
                         config_path[var_name] = {}
-                    elif action_type == "get" and value:
+                    elif action_type == "get" and value is not None:
                         config_path[var_name] = {}
                     else:
                         return None
@@ -86,7 +86,7 @@ class Config:
             else:
                 if action_type == "set":
                     config_path[var_name] = value
-                elif var_name not in config_path and action_type == "get" and not value:
+                elif var_name not in config_path and action_type == "get" and value is None:
                     return None
                 elif var_name not in config_path and action_type == "get":
                     config_path[var_name] = value

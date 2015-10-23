@@ -125,12 +125,12 @@ class Bot:
                         self.desc.append(desk.format(cmd_start=cmd_start))
                     reg = self.config.get(".".join([cmd_name, "regex"]), reg)
                     all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
-        for reg, cmd, cmd_name, desk in pcommands:
+        for reg, cmd, cmd_name, mod_name, desk in pcommands:
             self.cmds[cmd_name] = cmd
             if len(desk) > 0:
-                desk = self.config.get(".".join([PBOTNAME, cmd_name, "description"]), desk)
+                desk = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "description"]), desk)
                 self.desc.append(desk.format(cmd_start=cmd_start))
-            reg = self.config.get(".".join([PBOTNAME, cmd_name, "regex"]), reg)
+            reg = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "regex"]), reg)
             all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
         logger.debug("Regex: %s", all_reg[:-1])
         self.reg = re.compile(all_reg[:-1])
@@ -250,4 +250,3 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigterm_handler)
     signal.signal(signal.SIGTERM, sigterm_handler)
     main()
-

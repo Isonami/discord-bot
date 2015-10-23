@@ -4,11 +4,27 @@
     "password": "password",
     "admins": []
   },
+  "help": {
+    "regex": "h(?:elp)?",
+    "description": "{cmd_start}h(elp) - show help"
+  }
   "exchangerates": {
     "appid": "SELFAPIKEY"
-  }
+  },
   "wolframalpha": {
     "appid": "SELFAPIKEY",
     "static_url": "http://some.site/{file}"
+  },
+  "pyfibot": {
+    "module_openweather": {
+      "ban_cmd": [
+        "forecast"
+      ],
+      "weather": {
+        "regex": "w(?:r|eather)",
+        "description": "{cmd_start}w(r|eather) city - get weather for city (default: Moscow)"
+      },
+      "default_location": "Moscow"
+    }
   }
 }
