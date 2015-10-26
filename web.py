@@ -11,6 +11,7 @@ import json
 from multiprocessing import Process, Pipe
 from threading import Thread
 import signal
+import sys
 logger = logging.getLogger(__name__)
 port = 8480
 address = "127.0.0.1"
@@ -45,6 +46,10 @@ class MainHandler(tornado.web.RequestHandler):
             self.write('{"error":"Unknown discord error"}')
         else:
             self.write('{"error":"Unknown error"}')
+
+
+def sigterm_handler(_signo, _stack_frame):
+    sys.exit(0)
 
 
 def get_stats(bot):
@@ -112,6 +117,8 @@ def main(config, pipe):
     client_pipe = pipe
     global port
     global address
+    signal.signal(signal.SIGINT, sigterm_handler)
+    signal.signal(signal.SIGTERM, sigterm_handler)
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
     if os.path.exists(json_file):
