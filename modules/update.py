@@ -1,8 +1,7 @@
 import logging
-import os
 import subprocess
 logger = logging.getLogger(__name__)
-command = "git --git-dir={maindir}/.git pull origin master"
+command = "git -C {maindir} pull origin master"
 
 
 def init(bot):
