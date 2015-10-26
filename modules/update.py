@@ -1,7 +1,7 @@
 import logging
 import subprocess
 logger = logging.getLogger(__name__)
-command = "git -C {maindir} pull origin master"
+command = "git -C {maindir} pull origin master 2>&1"
 
 
 def init(bot):
