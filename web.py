@@ -51,10 +51,13 @@ def get_stats(bot):
                         "messages": []
                     }
                     for member in members_temp:
-                        # curently not a simple way to determinate member for specified channel
+                        # curently not a simple way to determinate member for specifed channel
                         # try:
                         # if channel.permissions_for(member).can_read_messages:
-                        dict_out[server.name]["channels"][channel.name]["members"][member.name] = member.status
+                        dict_out[server.name]["channels"][channel.name]["members"][member.name] = {
+                            "status": member.status,
+                            "avatar": member.avatar
+                        }
                         # except AttributeError:
                         #     pass
                     for msg in bot.client.logs_from(channel, limit=10):
