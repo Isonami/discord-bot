@@ -38,7 +38,7 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         client_pipe.send(["stats"])
         out = client_pipe.recv()
-        self.head("Content-Type", "application/json; charset=UTF-8")
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
         if out[0] == 0:
             self.write(out[1])
         elif out[0] == 2:
