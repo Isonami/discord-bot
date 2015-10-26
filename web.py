@@ -12,7 +12,7 @@ from multiprocessing import Process, Pipe
 from threading import Thread
 import signal
 import sys
-logger = logging.getLogger(__name__)
+logger_main = logging.getLogger(__name__)
 port = 8480
 address = "127.0.0.1"
 debug = False
@@ -91,7 +91,7 @@ def get_stats(bot):
                         dict_out[server.name]["channels"][channel.name]["messages"].append(one_msg)
         return dict_out
     except Exception, exc:
-        logger.error("%s: %s" % (exc.__class__.__name__, exc))
+        logger_main.error("%s: %s" % (exc.__class__.__name__, exc))
 
 
 def start_web(bot):
