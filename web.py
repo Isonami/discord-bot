@@ -84,7 +84,7 @@ def get_stats(bot):
                         #     pass
                     for msg in bot.client.logs_from(channel, limit=10):
                         one_msg = {
-                            "timestamp": msg.timestamp,
+                            "timestamp": msg.timestamp.timestamp(),
                             "name": msg.author.name,
                             "msg": msg.content
                         }
