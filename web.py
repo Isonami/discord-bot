@@ -9,11 +9,23 @@ import tornado.web
 import os
 import json
 from multiprocessing import Process, Pipe
+from threading import Thread
 logger = logging.getLogger(__name__)
 port = 8480
 address = "127.0.0.1"
 debug = False
 logging_file_name = "logging-web.json"
+
+
+class WebProxyThread(Thread):
+    def __init__(self, **kwargs):
+        Thread.__init__(self, **kwargs)
+
+    @staticmethod
+    def terminate():
+        if "wp" in globals():
+            if hasattr(wp, "terminate"):
+                wp.terminate()
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -73,6 +85,7 @@ def get_stats(bot):
 
 def start_web(bot):
     parent_pipe, child_pipe = Pipe()
+    global wp
     wp = Process(name="WebServer", target=main, args=(bot.config.get("web"), child_pipe))
     wp.daemon = True
     wp.start()
