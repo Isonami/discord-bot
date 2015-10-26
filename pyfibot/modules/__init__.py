@@ -42,7 +42,7 @@ def init(bot, commands):
                     if var.startswith(base):
                         cmd_name = var[len(base):]
                         mod_name = obj.__name__
-                        if cmd_name in bot.config.get(".".join([mod_name, cmd_name, "ban_cmd"]), []):
+                        if cmd_name in bot.config.get(".".join([mod_name, "ban_cmd"]), []):
                             continue
                         fnk = makefunck(bot, obj, var)
                         cmd = r"%s(?: (?P<%s>.+))?" % (cmd_name, var)

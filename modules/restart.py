@@ -40,6 +40,7 @@ def check_syntax():
 def main(self, message, *args, **kwargs):
     try:
         if self.is_admin(message.author) and message.channel.is_private:
+            self.typing(message.channel)
             if check_syntax():
                 self.send(message.channel, "Syntax OK. Restarting...")
                 th = Thread(target=restart)

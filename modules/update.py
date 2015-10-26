@@ -30,6 +30,7 @@ def update():
 def main(self, message, *args, **kwargs):
     try:
         if self.is_admin(message.author) and message.channel.is_private:
+            self.typing(message.channel)
             code = update()
             if code == 0:
                 self.send(message.channel, "Update OK.")
