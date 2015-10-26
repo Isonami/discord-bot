@@ -20,7 +20,7 @@ def update():
         else:
             return -2
     except subprocess.CalledProcessError as e:
-        logger.error("Git process return: %s", e.output)
+        logger.error("Git process return: %s", vars(e))
         return 1
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
@@ -31,7 +31,7 @@ def main(self, message, *args, **kwargs):
     try:
         if self.is_admin(message.author) and message.channel.is_private:
             code = update()
-            if code == 1:
+            if code == 0:
                 self.send(message.channel, "Update OK.")
             elif code == -1:
                 self.send(message.channel, "No update found.")
