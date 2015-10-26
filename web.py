@@ -12,6 +12,7 @@ from multiprocessing import Process, Pipe
 from threading import Thread
 import signal
 import sys
+from time import mktime
 logger_main = logging.getLogger(__name__)
 port = 8480
 address = "127.0.0.1"
@@ -84,7 +85,7 @@ def get_stats(bot):
                         #     pass
                     for msg in bot.client.logs_from(channel, limit=10):
                         one_msg = {
-                            "timestamp": msg.timestamp.timestamp(),
+                            "timestamp": mktime(msg.timestamp.timetuple()),
                             "name": msg.author.name,
                             "msg": msg.content
                         }
