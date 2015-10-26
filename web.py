@@ -38,6 +38,7 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         client_pipe.send(["stats"])
         out = client_pipe.recv()
+        self.head("Content-Type", "application/json; charset=UTF-8")
         if out[0] == 0:
             self.write(out[1])
         elif out[0] == 2:
@@ -83,6 +84,7 @@ def get_stats(bot):
                         #     pass
                     for msg in bot.client.logs_from(channel, limit=10):
                         one_msg = {
+                            "timestamp": msg.timestamp,
                             "name": msg.author.name,
                             "msg": msg.content
                         }
