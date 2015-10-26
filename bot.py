@@ -17,7 +17,7 @@ from threading import Thread
 import discord.endpoints as endpoints
 import signal
 import sys
-import multiprocessing
+import web
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -265,6 +265,10 @@ def main(notrealy=False):
     th = Thread(name="Bot", target=bot.client.run)
     th.daemon = True
     th.start()
+    if bot.config.get("web.enable"):
+        webth = Thread(name="WebProxy", target=web.start_web, args=(bot,))
+        webth.daemon = True
+        webth.start()
     while not bot.disconnect:
         sleep(1)
 

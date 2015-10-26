@@ -60,6 +60,7 @@ target/
 settings.py
 settings.json
 logging.json
+logging-web.json
 
 # db
 db/*.db

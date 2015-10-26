@@ -1,5 +1,4 @@
 import logging
-from time import time
 import json
 from tornado.httpclient import HTTPError
 from os import path, mkdir
@@ -10,11 +9,11 @@ import uuid
 from urllib import quote
 from threading import Thread
 from Queue import Queue, Empty
-from time import sleep
+from time import sleep, time
 
 
 walpha_url = None
-walpha_delay = 600
+walpha_delay = 60
 walpha_appid = None
 walpha_static_url = None
 delay = {"last": 0}
@@ -28,6 +27,44 @@ msg_template_q = """Question: {question}{qimg}"""
 msg_template_a = """Answer: {answer}{img}"""
 
 logger = logging.getLogger(__name__)
+
+
+str_num = [
+    "zero",
+    "one",
+    "two",
+    "free",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eigth",
+    "nine",
+    "ten"
+]
+
+
+def delay_txt(sdelay):
+    if sdelay < 60:
+        if sdelay == 1:
+            str_out = "per second"
+        else:
+            if len(str_num) > sdelay:
+                sdelay = str_num[sdelay]
+            str_out = "every %s seconds" % sdelay
+    else:
+        mdelay, sdelay = divmod(sdelay, 60)
+        if mdelay == 1:
+            str_out = "per minute{}"
+        else:
+            if len(str_num) > mdelay:
+                mdelay = str_num[mdelay]
+            str_out = "every %s{} minutes" % mdelay
+        if sdelay > 30:
+            str_out += str_out.format(" and a half")
+        else:
+            str_out += str_out.format("")
+    return str_out
 
 
 def check_xml_pod(pod):
@@ -196,7 +233,7 @@ def main(self, message, *args, **kwargs):
             ans = json.loads(row[1])
         else:
             if now < delay["last"]:
-                self.send(message.channel, "Allowed one question per minute")
+                self.send(message.channel, "Allowed one question %s" % delay_txt(walpha_delay))
                 return
             out = getanswer(self.http_client, question)
             if not out:

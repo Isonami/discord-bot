@@ -4,10 +4,13 @@
     "password": "password",
     "admins": []
   },
+  "web": {
+    "enable": false
+  },
   "help": {
     "regex": "h(?:elp)?",
     "description": "{cmd_start}h(elp) - show help"
-  }
+  },
   "exchangerates": {
     "appid": "SELFAPIKEY"
   },
