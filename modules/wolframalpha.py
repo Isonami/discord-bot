@@ -61,9 +61,9 @@ def delay_txt(sdelay):
                 mdelay = str_num[mdelay]
             str_out = "every %s{} minutes" % mdelay
         if sdelay > 30:
-            str_out += str_out.format(" and a half")
+            str_out = str_out.format(" and a half")
         else:
-            str_out += str_out.format("")
+            str_out = str_out.format("")
     return str_out
 
 
