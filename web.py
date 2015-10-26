@@ -24,6 +24,7 @@ class WebProxyThread(Thread):
     @staticmethod
     def terminate():
         if "wp" in globals():
+            logger.debug(wp)
             if hasattr(wp, "terminate"):
                 wp.terminate()
 
