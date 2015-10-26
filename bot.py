@@ -65,7 +65,7 @@ status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
 
 def sigterm_handler(_signo, _stack_frame):
     try:
-        if "webth" in globals() and webth:
+        if "webth" in globals():
             webth.terminate()
         if "bot" in globals() and not bot.disconnect:
             logger.info("Stopping...")
