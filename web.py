@@ -105,8 +105,13 @@ def start_web(bot):
         in_put = parent_pipe.recv()
         if in_put[0] == "stats":
             ret_dict = get_stats(bot)
+            try:
+                ret = json.dumps(ret_dict)
+            except Exception, exc:
+                logger_main.error("%s: %s" % (exc.__class__.__name__, exc))
+                parent_pipe.send([2])
             if ret_dict:
-                parent_pipe.send([0, json.dumps(ret_dict)])
+                parent_pipe.send([0, ret])
             else:
                 parent_pipe.send([1])
         else:
