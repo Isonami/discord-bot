@@ -25,6 +25,8 @@ if __name__ == "__main__":
             daemon.stop()
         elif 'restart' == sys.argv[1]:
             daemon.restart()
+        elif 'check' == sys.argv[1]:
+            bot.main(notrealy=True)
         else:
             print "Unknown command"
             sys.exit(2)

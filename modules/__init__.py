@@ -6,6 +6,7 @@ import random_num
 import usersid
 import restart
 import uptime
+import update
 
 
 from types import ModuleType

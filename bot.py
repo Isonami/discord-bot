@@ -17,6 +17,7 @@ from threading import Thread
 import discord.endpoints as endpoints
 import signal
 import sys
+import multiprocessing
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -99,7 +100,7 @@ def server_status(client):
 
 
 class Bot:
-    def __init__(self):
+    def __init__(self, notrealy=False):
         self.config = config.Config()
         self.admins = self.config.get("discord.admins", [])
         self.on_ready = []
@@ -108,13 +109,16 @@ class Bot:
         updates.init(self)
         self.login = self.config.get("discord.login")
         self.password = self.config.get("discord.password")
-        self.client = discord.Client()
-        self.client.login(self.login, self.password)
-        self.cmds = {}
-        self.desc = []
-        self.ifnfo_line = ifnfo_line % self.config.get("version")
-        self.http_client = http_client
+        if not notrealy:
+            self.client = discord.Client()
+            self.client.login(self.login, self.password)
+            self.cmds = {}
+            self.desc = []
+            self.ifnfo_line = ifnfo_line % self.config.get("version")
+            self.http_client = http_client
         pcommands = pyfibot.init(self)
+        if notrealy:
+            return
         all_reg = r""
         for reg, cmd_name, desk in commands:
             if hasattr(modules, cmd_name):
@@ -230,7 +234,7 @@ class Bot:
         return user.id in self.admins
 
 
-def main():
+def main(notrealy=False):
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
     if os.path.exists(json_file):
@@ -250,6 +254,9 @@ def main():
     global http_client
     http_client = httpclient.HTTPClient()
     global bot
+    if notrealy:
+        bot = Bot(notrealy=True)
+        sys.exit(0)
     try:
         bot = Bot()
     except Exception, exc:

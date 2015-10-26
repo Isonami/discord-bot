@@ -7,6 +7,7 @@ commands = [
      "{cmd_start}w(alpha) - question (1-255 symbols)"),
     (r"uid (?P<server_name>.+)", "usersid", ""),
     (r"restart", "restart", ""),
+    (r"update", "update", ""),
     (r"uptime", "uptime", ""),
 ]
 
