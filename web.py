@@ -13,6 +13,8 @@ from threading import Thread
 import signal
 import sys
 from time import mktime
+import re
+mention = re.compile(r"<@([0-9]{17})>")
 logger_main = logging.getLogger(__name__)
 port = 8480
 address = "127.0.0.1"
@@ -61,8 +63,10 @@ def get_stats(bot):
             dict_out[server.name] = {}
             online = 0
             members_temp = []
+            mention_id = {}
             for member in server.members:
                 members_temp.append(member)
+                mention_id[member.id] = member.name
                 if member.status == 'online' or member.status == 'idle':
                     online += 1
             dict_out[server.name]["online"] = online
@@ -87,7 +91,7 @@ def get_stats(bot):
                         one_msg = {
                             "timestamp": mktime(msg.timestamp.timetuple()),
                             "name": msg.author.name,
-                            "msg": msg.content
+                            "msg": mention.sub(lambda m: "@{}".format(mention_id[m.group(1)]), msg.content)
                         }
                         dict_out[server.name]["channels"][channel.name]["messages"].append(one_msg)
         return dict_out
@@ -112,7 +116,12 @@ def start_web(bot):
                 logger_main.error("%s: %s" % (exc.__class__.__name__, exc))
                 parent_pipe.send([2])
             if ret_dict:
-                parent_pipe.send([0, ret])
+                try:
+                    ret = json.dumps(ret_dict)
+                    parent_pipe.send([0, ret])
+                except Exception, exc:
+                    logger_main.error("%s: %s" % (exc.__class__.__name__, exc))
+                    parent_pipe.send([2])
             else:
                 parent_pipe.send([1])
         else:
