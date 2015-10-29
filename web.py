@@ -89,7 +89,7 @@ def get_stats(bot):
                         #     pass
                     for msg in bot.client.logs_from(channel, limit=10):
                         one_msg = {
-                            "timestamp": (msg.timestamp - datetime.fromtimestamp(0)).total_seconds(),
+                            "timestamp": (msg.timestamp - datetime.utcfromtimestamp(0)).total_seconds(),
                             "name": msg.author.name,
                             "msg": mention.sub(lambda m: "@{}".format(mention_id[m.group(1)]), msg.content)
                         }
