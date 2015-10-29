@@ -120,7 +120,6 @@ class Bot:
             self.cmds = {}
             self.desc = []
             self.ifnfo_line = ifnfo_line % self.config.get("version")
-            self.http_client = http_client
         pcommands = pyfibot.init(self)
         if notrealy:
             return
