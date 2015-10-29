@@ -12,7 +12,7 @@ from multiprocessing import Process, Pipe
 from threading import Thread
 import signal
 import sys
-from time import mktime
+from time import mktime, gmtime
 import re
 mention = re.compile(r"<@([0-9]{17})>")
 logger_main = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ def get_stats(bot):
                         #     pass
                     for msg in bot.client.logs_from(channel, limit=10):
                         one_msg = {
-                            "timestamp": mktime(msg.timestamp.timetuple()),
+                            "timestamp": mktime(gmtime(mktime(msg.timestamp.timetuple()))),
                             "name": msg.author.name,
                             "msg": mention.sub(lambda m: "@{}".format(mention_id[m.group(1)]), msg.content)
                         }

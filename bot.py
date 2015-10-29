@@ -18,6 +18,7 @@ import signal
 import sys
 import web
 import types
+import scheduler
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -107,6 +108,8 @@ class Bot:
         self.admins = self.config.get("discord.admins", [])
         self.on_ready = []
         self.disconnect = False
+        self.http_client = http_client
+        self.scheduler = scheduler.Scheduler()
         commands = modules.init(self)
         updates.init(self)
         self.login = self.config.get("discord.login")
@@ -139,6 +142,7 @@ class Bot:
             all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
         logger.debug("Regex: %s", all_reg[:-1])
         self.reg = re.compile(all_reg[:-1])
+        self.scheduler.start()
 
         @self.client.event
         def on_message(message):

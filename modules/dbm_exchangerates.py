@@ -37,6 +37,7 @@ def init(bot):
     rates_delay = bot.config.get("exchangerates.delay", rates_delay)
     global rates_format
     rates_format = bot.config.get("exchangerates.format", rates_format)
+    bot.scheduler.append(getrates, "Exchagerates", rates_delay, bot.http_client)
 
 
 def getrates(client):
@@ -61,9 +62,16 @@ def getrates(client):
         # HTTPError is raised for non-200 responses; the response
         # can be found in e.response.
         logger.error("HTTPError: " + str(e))
+    except Exception, exc:
+        logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
 
 def get_onerate(base_rate, need_rate, fmt=None, arrow_up=ARROW_UP, arrow_down=ARROW_DOWN):
+    if base_rate not in rates["rates"] or need_rate not in rates["rates"]:
+        if fmt:
+            return ""
+        else:
+            return 0
     def_cur = rates["rates"][base_rate]
     arrow = ""
     num = def_cur / rates["rates"][need_rate]
@@ -87,9 +95,9 @@ def get_onerate(base_rate, need_rate, fmt=None, arrow_up=ARROW_UP, arrow_down=AR
 
 def main(self, message, *args, **kwargs):
     try:
-        now = time()
-        if now > rates["next"]:
-            getrates(self.http_client)
+        # now = time()
+        # if now > rates["next"]:
+        #     getrates(self.http_client)
         cur_list = []
         if "currency" in kwargs and kwargs["currency"]:
             splt_cur = kwargs["currency"][1:].split()
