@@ -12,12 +12,12 @@ import updates
 import pyfibot
 from pyfibot.pbot import NAME as PBOTNAME
 import config
-from commands import commands
 from threading import Thread
 import discord.endpoints as endpoints
 import signal
 import sys
 import web
+import types
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -107,7 +107,7 @@ class Bot:
         self.admins = self.config.get("discord.admins", [])
         self.on_ready = []
         self.disconnect = False
-        modules.init(self)
+        commands = modules.init(self)
         updates.init(self)
         self.login = self.config.get("discord.login")
         self.password = self.config.get("discord.password")
@@ -122,16 +122,14 @@ class Bot:
         if notrealy:
             return
         all_reg = r""
-        for reg, cmd_name, desk in commands:
-            if hasattr(modules, cmd_name):
-                module = getattr(modules, cmd_name)
-                if hasattr(module, "main"):
-                    self.cmds[cmd_name] = getattr(module, "main")
-                    if len(desk) > 0:
-                        desk = self.config.get(".".join([cmd_name, "description"]), desk)
-                        self.desc.append(desk.format(cmd_start=cmd_start))
-                    reg = self.config.get(".".join([cmd_name, "regex"]), reg)
-                    all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
+        for reg, cmd, mod_name, desk in commands:
+            if isinstance(cmd, types.FunctionType):
+                self.cmds[mod_name] = cmd
+                if len(desk) > 0:
+                    desk = self.config.get(".".join([mod_name, "description"]), desk)
+                    self.desc.append(desk.format(cmd_start=cmd_start))
+                reg = self.config.get(".".join([mod_name, "regex"]), reg)
+                all_reg += r"(?P<%s>^%s$)|" % (mod_name, reg)
         for reg, cmd, cmd_name, mod_name, desk in pcommands:
             self.cmds[cmd_name] = cmd
             if len(desk) > 0:

@@ -1,18 +1,21 @@
 import logging
 import subprocess
+
+command = r"update"
+
 logger = logging.getLogger(__name__)
-command = "git -C {maindir} pull origin master 2>&1"
+update_command = "git -C {maindir} pull origin master 2>&1"
 
 
 def init(bot):
-    global command
-    command = bot.config.get("update.command", command)
-    command = command.format(maindir=bot.config.get("main.dir"))
+    global update_command
+    update_command = bot.config.get("update.command", update_command)
+    update_command = update_command.format(maindir=bot.config.get("main.dir"))
 
 
 def update():
     try:
-        out = subprocess.check_output(command, shell=True)
+        out = subprocess.check_output(update_command, shell=True)
         if out.find("Updating") != -1:
             return 0
         elif out.find("up-to-date") != -1:

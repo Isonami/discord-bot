@@ -3,6 +3,9 @@ from random import randint
 
 logger = logging.getLogger(__name__)
 
+command = r"rand(?:om)?(?: (?P<randcount>[0-9]{1,5}))?"
+description = "{cmd_start}rand(om) max - show random number from 1"
+
 
 def main(self, message, *args, **kwargs):
     try:

@@ -1,5 +1,6 @@
 import logging
 
+command = r"uid (?P<server_name>.+)"
 
 logger = logging.getLogger(__name__)
 user_ans_template = "User:{username} ID:{id}"
@@ -20,7 +21,7 @@ def main(self, message, *args, **kwargs):
                         ans.append(user_ans_template.format(username=user.name.encode('utf-8'), id=user.id))
                     if len(ans) > 0:
                         self.send(message.channel, "`{}`".format("\n".join(ans)))
-                    break
+                    return
             self.send(message.channel, "Can not find server '%s' or not logged on it." % server_name)
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))

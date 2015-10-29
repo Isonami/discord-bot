@@ -1,6 +1,8 @@
 import logging
 from datetime import datetime, time
 
+command = r"uptime"
+
 logger = logging.getLogger(__name__)
 datefmt = "%Y-%m-%d %H:%M"
 

@@ -11,6 +11,8 @@ from threading import Thread
 from Queue import Queue, Empty
 from time import sleep, time
 
+command = r"w(?:a|alpha) (?P<clear>forgot )?(?P<question>[ a-z0-9\+\?\^\-\*,\.\"\'=:;\(\)/%]{1,255})"
+description = "{cmd_start}wa(lpha) - question (1-255 symbols)"
 
 walpha_url = None
 walpha_delay = 60
