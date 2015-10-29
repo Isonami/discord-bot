@@ -63,6 +63,7 @@ class Config:
 
 class Pbot:
     http_client = None
+    scheduler = None
 
     def __init__(self, bot):
         for var_name in self.__class__.__dict__:

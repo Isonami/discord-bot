@@ -9,8 +9,13 @@ description = "{cmd_start}$ USD|EUR - show exchange rates"
 rates_url = None
 rates_delay = 600
 rates = {
-    "rates": {},
-    "next": 0
+    "rates": [
+        {},
+        {}
+    ],
+    "next": 0,
+    "etag": "",
+    "date": ""
 }
 rates_def = "RUB"
 rates_any_list = ["USD", "EUR", "UAH"]
@@ -37,28 +42,39 @@ def init(bot):
     rates_delay = bot.config.get("exchangerates.delay", rates_delay)
     global rates_format
     rates_format = bot.config.get("exchangerates.format", rates_format)
-    bot.scheduler.append(getrates, "Exchagerates", rates_delay, bot.http_client)
+    bot.scheduler.append(getrates, "Exchagerates", 15, bot.http_client)
 
 
 def getrates(client):
     try:
-        logger.debug("Get new rates")
+        logger.debug("Try to get new rates")
         if not rates_url:
             logger.debug("Can not get rates, no url specified!")
             return
-        response = client.fetch(rates_url, method="GET")
+        headers = {}
+        if len(rates["etag"]) > 0:
+            headers["If-None-Match"] = rates["etag"]
+            headers["If-Modified-Since"] = rates["date"]
+        response = client.fetch(rates_url, method="GET", headers=headers)
+        logger.debug(response.code)
         # print response.body
         rvars = json.loads(response.body)
         if rvars:
-            now = time()
             if "rates" in rvars:
                 logger.debug("Rates updated")
-                rates["rates"] = rvars["rates"]
-                rates["next"] = now + rates_delay
+                rates["rates"][1] = rates["rates"][0]
+                rates["rates"][0] = rvars["rates"]
+                if "ETag" in response.headers and "Date" in response.headers:
+                    logger.debug("Got ETag: %s, Date: %s", response.headers["ETag"], response.headers["Date"])
+                    rates["etag"] = response.headers["ETag"]
+                    rates["date"] = response.headers["Date"]
         else:
             logger.error("Can not get rates")
         return None
     except HTTPError as e:
+        if e.response.code == 304:
+            logger.debug("Rates did not change")
+            return
         # HTTPError is raised for non-200 responses; the response
         # can be found in e.response.
         logger.error("HTTPError: " + str(e))
@@ -67,27 +83,21 @@ def getrates(client):
 
 
 def get_onerate(base_rate, need_rate, fmt=None, arrow_up=ARROW_UP, arrow_down=ARROW_DOWN):
-    if base_rate not in rates["rates"] or need_rate not in rates["rates"]:
+    if base_rate not in rates["rates"][0] or need_rate not in rates["rates"][0]:
         if fmt:
             return ""
         else:
             return 0
-    def_cur = rates["rates"][base_rate]
+    def_cur = rates["rates"][0][base_rate]
     arrow = ""
-    num = def_cur / rates["rates"][need_rate]
-    if need_rate in rates_history[0]:
-        if num > rates_history[0][need_rate]:
+    num = def_cur / rates["rates"][0][need_rate]
+    if need_rate in rates["rates"][1] and base_rate in rates["rates"][1] :
+        old_def_cur = rates["rates"][1][base_rate]
+        old_num = old_def_cur / rates["rates"][1][need_rate]
+        if num > old_num:
             arrow = arrow_up
-        elif num < rates_history[0][need_rate]:
+        elif num < old_num:
             arrow = arrow_down
-        if need_rate in rates_history[1]:
-            if rates_history[1][need_rate] != num:
-                rates_history[0][need_rate] = rates_history[1][need_rate]
-                rates_history[1][need_rate] = num
-        else:
-            rates_history[1][need_rate] = num
-    else:
-        rates_history[0][need_rate] = num
     if fmt:
         return fmt.format(need_rate=need_rate, base_rate=base_rate, value=num, arrow=arrow)
     return num, arrow
