@@ -24,8 +24,8 @@ rates_history = [
     ]
 rates_format = "1 {need_rate} = {value:0.2f}{arrow} {base_rate}"
 rates_last = {}
-ARROW_UP = unichr(8593)
-ARROW_DOWN = unichr(8595)
+ARROW_UP = unichr(8593).encode('utf-8')
+ARROW_DOWN = unichr(8595).encode('utf-8')
 
 logger = logging.getLogger(__name__)
 
