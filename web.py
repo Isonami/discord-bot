@@ -14,7 +14,7 @@ import signal
 import sys
 from datetime import datetime
 import re
-mention = re.compile(r"<@([0-9]{17})>")
+mention = re.compile(r"<@([0-9]+)>")
 logger_main = logging.getLogger(__name__)
 port = 8480
 address = "127.0.0.1"
@@ -84,7 +84,8 @@ def get_stats(bot):
                         # if channel.permissions_for(member).can_read_messages:
                         dict_out[server.name]["channels"][channel.name]["members"][member.name] = {
                             "status": member.status,
-                            "avatar": member.avatar
+                            "avatar": member.avatar,
+                            "id": member.id
                         }
                         # except AttributeError:
                         #     pass
