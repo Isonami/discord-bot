@@ -93,7 +93,9 @@ def get_stats(bot):
                         one_msg = {
                             "timestamp": (msg.timestamp - datetime.utcfromtimestamp(0)).total_seconds(),
                             "name": msg.author.name,
-                            "msg": mention.sub(lambda m: "@{}".format(mention_id[m.group(1)]), msg.content)
+                            "msg": mention.sub(lambda m: "@{}".format(mention_id[m.group(1)]
+                                                                      if m.group(1) in mention_id else m.group(1)),
+                                               msg.content)
                         }
                         dict_out[server.name]["channels"][channel.name]["messages"].append(one_msg)
         return dict_out
