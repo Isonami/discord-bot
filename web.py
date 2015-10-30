@@ -21,6 +21,7 @@ address = "127.0.0.1"
 debug = False
 logging_file_name = "logging-web.json"
 wp_pid = None
+chat_limit = 10
 
 
 class WebProxyThread(Thread):
@@ -87,7 +88,7 @@ def get_stats(bot):
                         }
                         # except AttributeError:
                         #     pass
-                    for msg in bot.client.logs_from(channel, limit=10):
+                    for msg in bot.client.logs_from(channel, limit=chat_limit):
                         one_msg = {
                             "timestamp": (msg.timestamp - datetime.utcfromtimestamp(0)).total_seconds(),
                             "name": msg.author.name,
@@ -134,6 +135,7 @@ def main(config, pipe):
     client_pipe = pipe
     global port
     global address
+    global chat_limit
     signal.signal(signal.SIGINT, sigterm_handler)
     signal.signal(signal.SIGTERM, sigterm_handler)
     main_dir = os.path.dirname(os.path.realpath(__file__))
@@ -155,9 +157,10 @@ def main(config, pipe):
     if config:
         if "port" in config:
             port = config["port"]
-            print port
         if "address" in config:
             port = config["address"]
+        if "limit" in config:
+            chat_limit = config["limit"]
     try:
         global running
         global http_server

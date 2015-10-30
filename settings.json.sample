@@ -5,7 +5,8 @@
     "admins": []
   },
   "web": {
-    "enable": false
+    "enable": false,
+    "limit": 10
   },
   "disable": {
     "modules": [],
