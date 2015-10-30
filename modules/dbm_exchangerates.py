@@ -22,7 +22,7 @@ rates_history = [
     {},
     {}
     ]
-rates_format = "1 {base_rate} = {value:0.2f}{arrow} {need_rate}"
+rates_format = "1 {need_rate} = {value:0.2f}{arrow} {base_rate}"
 rates_last = {}
 ARROW_UP = unichr(8593)
 ARROW_DOWN = unichr(8595)
