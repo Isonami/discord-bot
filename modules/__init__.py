@@ -20,11 +20,13 @@ def main():
 def init(bot):
     commands = []
     try:
+        dis = bot.config.get("disable.updates", [])
         for obj in dbm_updates:
-            if hasattr(obj, "init"):
-                obj.init(bot)
-            if hasattr(obj, "command") and hasattr(obj, "main"):
-                commands.append((obj.command, obj.main, obj.__name__[len(mbase):], getattr(obj, "description", "")))
+            if obj.__name__[len(mbase):] not in dis:
+                if hasattr(obj, "init"):
+                    obj.init(bot)
+                if hasattr(obj, "command") and hasattr(obj, "main"):
+                    commands.append((obj.command, obj.main, obj.__name__[len(mbase):], getattr(obj, "description", "")))
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
         raise

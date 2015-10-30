@@ -19,9 +19,11 @@ def main():
 
 def init(bot):
     try:
+        dis = bot.config.get("disable.modules", [])
         for obj in dbm_updates:
-            if hasattr(obj, "init"):
-                obj.init(bot)
+            if obj.__name__[len(mbase):] not in dis:
+                if hasattr(obj, "init"):
+                    obj.init(bot)
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
         raise

@@ -1,5 +1,4 @@
 import logging
-from time import time
 import json
 from tornado.httpclient import HTTPError
 
@@ -23,7 +22,7 @@ rates_history = [
     {},
     {}
     ]
-rates_format = "1 {base_rate} = {value:0.2f} {need_rate}"
+rates_format = "1 {base_rate} = {value:0.2f}{arrow} {need_rate}"
 rates_last = {}
 ARROW_UP = unichr(8593)
 ARROW_DOWN = unichr(8595)
@@ -91,7 +90,7 @@ def get_onerate(base_rate, need_rate, fmt=None, arrow_up=ARROW_UP, arrow_down=AR
     def_cur = rates["rates"][0][base_rate]
     arrow = ""
     num = def_cur / rates["rates"][0][need_rate]
-    if need_rate in rates["rates"][1] and base_rate in rates["rates"][1] :
+    if need_rate in rates["rates"][1] and base_rate in rates["rates"][1]:
         old_def_cur = rates["rates"][1][base_rate]
         old_num = old_def_cur / rates["rates"][1][need_rate]
         if num > old_num:

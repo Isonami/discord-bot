@@ -7,6 +7,10 @@
   "web": {
     "enable": false
   },
+  "disable": {
+    "modules": [],
+    "updates": []
+  },
   "help": {
     "regex": "h(?:elp)?",
     "description": "{cmd_start}h(elp) - show help"
