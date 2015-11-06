@@ -1,15 +1,11 @@
 import logging
 import json
-from tornado.httpclient import HTTPError
 from os import path, mkdir
-import sqlite3
 from xml.dom import minidom
 import re
 import uuid
-from urllib import quote
-from threading import Thread
-from Queue import Queue, Empty
-from time import sleep, time
+from time import time
+from tornado.escape import url_escape
 
 command = r"w(?:a|alpha) (?P<clear>forgot )?(?P<question>[ a-z0-9\+\?\^\-\*,\.\"\'=:;\(\)/%]{1,255})"
 description = "{cmd_start}wa(lpha) - question (1-255 symbols)"
@@ -20,9 +16,7 @@ walpha_appid = None
 walpha_static_url = None
 delay = {"last": 0}
 bot_dir = ""
-insql = Queue()
-outsql = {}
-sql_timeout = 30
+
 
 msg_template_q = """Question: {question}{qimg}"""
 
@@ -44,6 +38,11 @@ str_num = [
     "nine",
     "ten"
 ]
+
+sql_init = """
+            CREATE TABLE IF NOT EXISTS Cache(Question TEXT, Answer TEXT);
+"""
+db_name = "cache.db"
 
 
 def delay_txt(sdelay):
@@ -80,72 +79,16 @@ def check_xml_pod(pod):
     return False
 
 
-def init_db():
-    try:
-        logger.debug("Init DB connection")
-        con = sqlite3.connect(path.join(bot_dir, "db", "cache.db"))
-        cur = con.cursor()
-        cur.executescript("""
-            CREATE TABLE IF NOT EXISTS Cache(Question TEXT, Answer TEXT);
-            """)
-        con.commit()
-        return con, cur
-    except Exception, exc:
-        logger.error("%s: %s" % (exc.__class__.__name__, exc))
-
-
-def sql_db(bot):
-    con, cur = init_db()
-    while not bot.disconnect:
-        try:
-            item = insql.get()
-        except Empty:
-            sleep(0.1)
-            continue
-        if item and "uuid" in item and "SQL" in item and "Type" in item and "Args" in item:
-            cur.execute(item["SQL"], item["Args"])
-            if item["Type"] == 1:
-                row = cur.fetchone()
-                outsql[item["uuid"]] = row
-            else:
-                con.commit()
-                outsql[item["uuid"]] = True
-
-
 def insert_db(question, answer):
-    cuuid = str(uuid.uuid1())
-    ans = {"uuid": cuuid, "SQL": "INSERT INTO Cache VALUES(?, ?);", "Type": 0, "Args": (question, answer)}
-    insql.put(ans)
-    n = 0
-    while n < sql_timeout * 10:
-        if cuuid in outsql:
-            return outsql[cuuid]
-        sleep(0.1)
-    return False
+    return sqlcon.commit("INSERT INTO Cache VALUES(?, ?);", question, answer)
 
 
 def select_db(question):
-    cuuid = str(uuid.uuid1())
-    ans = {"uuid": cuuid, "SQL": "SELECT * FROM Cache WHERE Question = ?;", "Type": 1, "Args": (question,)}
-    insql.put(ans)
-    n = 0
-    while n < sql_timeout * 10:
-        if cuuid in outsql:
-            return outsql[cuuid]
-        sleep(0.1)
-    return None
+    return sqlcon.request("SELECT * FROM Cache WHERE Question = ?;", question, one=True)
 
 
 def delete_db(question):
-    cuuid = str(uuid.uuid1())
-    ans = {"uuid": cuuid, "SQL": "DELETE FROM Cache WHERE Question = ?;", "Type": 1, "Args": (question,)}
-    insql.put(ans)
-    n = 0
-    while n < sql_timeout * 10:
-        if cuuid in outsql:
-            return outsql[cuuid]
-        sleep(0.1)
-    return False
+    return sqlcon.commit("DELETE FROM Cache WHERE Question = ?;", question, one=True)
 
 
 def init(bot):
@@ -163,41 +106,32 @@ def init(bot):
     imgre = re.compile(r".+Type=image/([a-zA-z]{3,4})&.+")
     global unire
     unire = re.compile(r"\\:([a-z0-9]{4})")
-    sql_th = Thread(name="WAlphaSQL", target=sql_db, args=(bot,))
-    sql_th.daemon = True
-    sql_th.start()
+    global sqlcon
+    sqlcon = bot.sqlcon(sql_init, db_name)
 
 
-def getanswer(client, qinput):
-    try:
-        logger.debug("Get answers")
-        if not walpha_url:
-            logger.debug("Can not get rates, no url specified!")
-            return
-        response = client.fetch(walpha_url.format(appid=walpha_appid, input=quote(qinput)), method="GET")
-        # print response.body
+def getanswer(http, qinput):
+    logger.debug("Get answers")
+    if not walpha_url:
+        logger.debug("Can not get rates, no url specified!")
+        return
+    state, response = http(walpha_url.format(appid=walpha_appid, input=url_escape(qinput)), method="GET")
+    if state == 0:
         if response.body:
             return response.body
-    except HTTPError as e:
-        # HTTPError is raised for non-200 responses; the response
-        # can be found in e.response.
-        logger.error("HTTPError: " + str(e))
 
 
-def getimage(client, src):
-    try:
-        logger.debug("Get img")
-        if not walpha_static_url:
-            return src
-        response = client.fetch(src, method="GET")
-        # print response.body
+def getimage(http, src):
+    logger.debug("Get img")
+    if not walpha_static_url:
+        return src
+    state, response = http(src, method="GET")
+    if state == 0:
         if not response.body:
             return src
         m = imgre.match(src)
         if not m:
             return src
-        # filename = str(uuid.uuid4()).replace("-", "")[10:] + "." + m.group(1)
-        # used png, because discor insert ugly "gif" watermark
         filename = str(uuid.uuid4()).replace("-", "")[10:] + "." + "png"
         file_dir = path.join(bot_dir, "static", "wolframalpha")
         if not path.exists(file_dir):
@@ -205,11 +139,7 @@ def getimage(client, src):
         with open(path.join(file_dir, filename), "wb") as f:
             f.write(response.body)
         return walpha_static_url.format(file=filename)
-    except HTTPError as e:
-        # HTTPError is raised for non-200 responses; the response
-        # can be found in e.response.
-        logger.error("HTTPError: " + str(e))
-        return src
+    return src
 
 
 def main(self, message, *args, **kwargs):
@@ -237,7 +167,7 @@ def main(self, message, *args, **kwargs):
             if now < delay["last"]:
                 self.send(message.channel, "Allowed one question %s" % delay_txt(walpha_delay))
                 return
-            out = getanswer(self.http_client, question)
+            out = getanswer(self.http, question)
             if not out:
                 self.send(message.channel, "Some times error happends, i can not control it =(")
                 logger.error("Can not get response from wolframalpha")
@@ -262,7 +192,7 @@ def main(self, message, *args, **kwargs):
                 if len(img_node) > 0:
                     qimg = img_node[0].getAttribute('src')
                 if len(qimg) > 0:
-                    qimg = "\n" + getimage(self.http_client, qimg.replace("&amp;", "&"))
+                    qimg = "\n" + getimage(self.http, qimg.replace("&amp;", "&"))
             for oneitem in itemlist:
                 for text_node in oneitem.getElementsByTagName('plaintext'):
                     img_node = oneitem.getElementsByTagName('img')
@@ -277,7 +207,7 @@ def main(self, message, *args, **kwargs):
                     if len(img_node) > 0:
                         img_src = img_node[0].getAttribute('src')
                     if len(img_src) > 0:
-                        img_src = "\n" + getimage(self.http_client, img_src.replace("&amp;", "&"))
+                        img_src = "\n" + getimage(self.http, img_src.replace("&amp;", "&"))
                     ans.append(msg_template_q.format(question=question, qimg=qimg))
                     ans.append(msg_template_a.format(answer=text, img=img_src))
             insert_db(question.lower(), json.dumps(ans))

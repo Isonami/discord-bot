@@ -2,6 +2,9 @@ import logging
 import subprocess
 
 command = r"update"
+description = "{cmd_start}update - update bot from git"
+admin = True
+private = True
 
 logger = logging.getLogger(__name__)
 update_command = "git -C {maindir} pull origin master 2>&1"
@@ -32,18 +35,17 @@ def update():
 
 def main(self, message, *args, **kwargs):
     try:
-        if self.is_admin(message.author) and message.channel.is_private:
-            self.typing(message.channel)
-            code = update()
-            if code == 0:
-                self.send(message.channel, "Update OK.")
-            elif code == -1:
-                self.send(message.channel, "No update found.")
-            elif code == -2:
-                self.send(message.channel, "Unknown git return.")
-            elif code == 1:
-                self.send(message.channel, "Git error. Check logs.")
-            else:
-                self.send(message.channel, "Unknown error.")
+        self.typing(message.channel)
+        code = update()
+        if code == 0:
+            self.send(message.channel, "Update OK.")
+        elif code == -1:
+            self.send(message.channel, "No update found.")
+        elif code == -2:
+            self.send(message.channel, "Unknown git return.")
+        elif code == 1:
+            self.send(message.channel, "Git error. Check logs.")
+        else:
+            self.send(message.channel, "Unknown error.")
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))

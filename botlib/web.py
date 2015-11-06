@@ -105,7 +105,7 @@ def get_stats(bot):
 
 def start_web(bot):
     parent_pipe, child_pipe = Pipe()
-    wp = Process(name="WebServer", target=main, args=(bot.config.get("web"), child_pipe))
+    wp = Process(name="WebServer", target=main, args=(bot.config.get("main.dir"), bot.config.get("web"), child_pipe))
     wp.daemon = True
     wp.start()
     global wp_pid
@@ -133,7 +133,7 @@ def start_web(bot):
     wp.terminate()
 
 
-def main(config, pipe):
+def main(main_dir, config, pipe):
     global client_pipe
     client_pipe = pipe
     global port
@@ -141,7 +141,6 @@ def main(config, pipe):
     global chat_limit
     signal.signal(signal.SIGINT, sigterm_handler)
     signal.signal(signal.SIGTERM, sigterm_handler)
-    main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
     if os.path.exists(json_file):
         try:

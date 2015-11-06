@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-from tornado.httpclient import HTTPError
 import json
 import logging
-from urllib import quote
 NAME = "pyfibot"
 logger = logging.getLogger(__name__)
 
 
-class Response:
+class Response(object):
     def __init__(self, resp):
         for var_name in resp.__dict__:
             if not var_name.startswith("__"):
@@ -22,28 +20,21 @@ class Response:
         raise ValueError
 
 
-def geturl(client, url, nocache=False, params=None, headers=None, cookies=None):
-    try:
-        logger.debug("Get URL: %s", url)
-        if params:
-            method = "POST"
-        else:
-            method = "GET"
-        if cookies:
-            if not headers:
-                headers = {}
-            headers = {"Cookie": cookies}
-        response = client.fetch(quote(url), method=method, headers=headers, body=params)
-        logger.debug("Response: %s", response.body)
-        return Response(response)
-    except HTTPError as e:
-        # HTTPError is raised for non-200 responses; the response
-        # can be found in e.response.
-        logger.error("HTTPError: " + str(e))
-        return Response(e.response)
+def geturl(http, url, nocache=False, params=None, headers=None, cookies=None):
+    logger.debug("Get URL: %s", url)
+    if params:
+        method = "POST"
+    else:
+        method = "GET"
+    if cookies:
+        headers = {"Cookie": cookies}
+    url = url.replace(" ", "+")
+    state, response = http(url, method=method, headers=headers, body=params)
+    logger.debug("Response: %s", response.body)
+    return Response(response)
 
 
-class Config:
+class Config(object):
     def __init__(self, bot, name=None):
         self.bot = bot
         if name:
@@ -61,8 +52,8 @@ class Config:
         return self.bot.config.set(".".join([self.name, var]), *args)
 
 
-class Pbot:
-    http_client = None
+class Pbot(object):
+    http = None
     scheduler = None
 
     def __init__(self, bot):
@@ -84,7 +75,7 @@ class Pbot:
         return user.id in self.admins
 
     def get_url(self, url, nocache=False, params=None, headers=None, cookies=None):
-        return geturl(self.http_client, url, nocache, params, headers, cookies)
+        return geturl(self.http, url, nocache, params, headers, cookies)
 
     def getUrl(self, url, nocache=False, params=None, headers=None, cookies=None):
-        return geturl(self.http_client. url, nocache, params, headers, cookies)
+        return geturl(self.http. url, nocache, params, headers, cookies)

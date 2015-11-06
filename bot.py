@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
-import discord
 import logging
 import logging.config
-import tornado.httpclient as httpclient
 import json
 from time import sleep
 import os
 import re
+from threading import Thread
+import signal
+import sys
+import types
+import discord
+import tornado.httpclient as httpclient
+import discord.endpoints as endpoints
 import modules
 import updates
 import pyfibot
 from pyfibot.pbot import NAME as PBOTNAME
-import config
-from threading import Thread
-import discord.endpoints as endpoints
-import signal
-import sys
-import web
-import types
-import scheduler
+from botlib import config, sql, scheduler, web, http
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -102,14 +100,18 @@ def server_status(client):
         logger.error("HTTPError: " + str(e))
 
 
-class Bot:
+class Bot(object):
     def __init__(self, notrealy=False):
         self.config = config.Config()
         self.admins = self.config.get("discord.admins", [])
         self.on_ready = []
         self.disconnect = False
         self.http_client = http_client
+        self.http = http.init(self)
+        if not self.http:
+            raise EnvironmentError("Can not start without http lib.")
         self.scheduler = scheduler.Scheduler()
+        self.sqlcon = sql.init(self)
         commands = modules.init(self)
         updates.init(self)
         self.login = self.config.get("discord.login")
@@ -118,27 +120,27 @@ class Bot:
             self.client = discord.Client()
             self.client.login(self.login, self.password)
             self.cmds = {}
-            self.desc = []
             self.ifnfo_line = ifnfo_line % self.config.get("version")
         pcommands = pyfibot.init(self)
         if notrealy:
             return
         all_reg = r""
-        for reg, cmd, mod_name, desk in commands:
+        for reg, cmd, mod_name, desk, admin, private in commands:
             if isinstance(cmd, types.FunctionType):
-                self.cmds[mod_name] = cmd
-                if len(desk) > 0:
+                if desk:
                     desk = self.config.get(".".join([mod_name, "description"]), desk)
-                    self.desc.append(desk.format(cmd_start=cmd_start))
+                    desk = desk.format(cmd_start=cmd_start)
                 reg = self.config.get(".".join([mod_name, "regex"]), reg)
                 all_reg += r"(?P<%s>^%s$)|" % (mod_name, reg)
+                self.cmds[mod_name] = {"CMD": cmd, "Description": desk, "Admin": admin, "Private": private}
         for reg, cmd, cmd_name, mod_name, desk in pcommands:
-            self.cmds[cmd_name] = cmd
-            if len(desk) > 0:
+            if desk:
                 desk = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "description"]), desk)
-                self.desc.append(desk.format(cmd_start=cmd_start))
+                if desk:
+                    desk = desk.format(cmd_start=cmd_start)
             reg = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "regex"]), reg)
             all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
+            self.cmds[mod_name] = {"CMD": cmd, "Description": desk, "Admin": False, "Private": False}
         logger.debug("Regex: %s", all_reg[:-1])
         self.reg = re.compile(all_reg[:-1])
         self.scheduler.start()
@@ -196,14 +198,20 @@ class Bot:
                     rkwargs = m.groupdict()
                     kwargs = {}
                     command = None
+                    mod_name = None
                     for item, value in rkwargs.iteritems():
                         if value:
                             if item in self.cmds:
-                                command = self.cmds[item]
+                                command = self.cmds[item]["CMD"]
+                                mod_name = item
                             else:
                                 kwargs[item] = value
                     args = m.groups()[len(rkwargs):]
-                    if command:
+                    if command and mod_name:
+                        if self.cmds[mod_name]["Admin"] and not self.is_admin(message.author):
+                            return
+                        if self.cmds[mod_name]["Private"] and not message.channel.is_private:
+                            return
                         command(self, message, *args, **kwargs)
         except Exception, exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
@@ -212,12 +220,10 @@ class Bot:
         if channel:
             if hasattr(channel, 'id'):
                 url = "{0}/{1}/typing".format(endpoints.CHANNELS, channel.id)
-                try:
-                    logger.debug("Send 'typing' status to server")
-                    self.http_client.fetch(url, method="POST", headers=self.client.headers, body="")
+                logger.debug("Send 'typing' status to server")
+                state, resp = self.http(url, method="POST", headers=self.client.headers)
+                if state == 0:
                     return True
-                except httpclient.HTTPError as e:
-                    logger.error("HTTPError: " + str(e))
         return False
 
     def logout(self):

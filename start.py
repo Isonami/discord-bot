@@ -2,9 +2,10 @@
 import sys
 import threading
 from time import sleep
-from daemon import Daemon
-import bot
 import signal
+
+from botlib.daemon import Daemon
+import bot
 
 
 class MyDaemon(Daemon):

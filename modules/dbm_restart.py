@@ -4,6 +4,9 @@ import sys
 from threading import Thread
 
 command = r"restart"
+description = "{cmd_start}restart - restart bot"
+admin = True
+private = True
 
 logger = logging.getLogger(__name__)
 restart_command = "%s {maindir}/start.py restart" % sys.executable
@@ -42,13 +45,12 @@ def check_syntax():
 
 def main(self, message, *args, **kwargs):
     try:
-        if self.is_admin(message.author) and message.channel.is_private:
-            self.typing(message.channel)
-            if check_syntax():
-                self.send(message.channel, "Syntax OK. Restarting...")
-                th = Thread(target=restart)
-                th.start()
-            else:
-                self.send(message.channel, "Syntax errors detected.")
+        self.typing(message.channel)
+        if check_syntax():
+            self.send(message.channel, "Syntax OK. Restarting...")
+            th = Thread(target=restart)
+            th.start()
+        else:
+            self.send(message.channel, "Syntax errors detected.")
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))

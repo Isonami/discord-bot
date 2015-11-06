@@ -23,7 +23,11 @@ def init(bot):
         for obj in dbm_updates:
             if obj.__name__[len(mbase):] not in dis:
                 if hasattr(obj, "init"):
-                    obj.init(bot)
+                    try:
+                        obj.init(bot)
+                    except Exception, exc:
+                        logger.error("Can not init module %s", obj.__name__)
+                        logger.error("%s: %s" % (exc.__class__.__name__, exc))
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
         raise

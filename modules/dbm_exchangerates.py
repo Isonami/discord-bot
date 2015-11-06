@@ -1,6 +1,5 @@
 import logging
 import json
-from tornado.httpclient import HTTPError
 
 command = r"\$(?P<currency>(?: [a-z]{3})+)?"
 description = "{cmd_start}$ USD|EUR - show exchange rates"
@@ -18,10 +17,6 @@ rates = {
 }
 rates_def = "RUB"
 rates_any_list = ["USD", "EUR", "UAH"]
-rates_history = [
-    {},
-    {}
-    ]
 rates_format = u"1 {need_rate} = {value:0.2f}{arrow} {base_rate}"
 rates_last = {}
 ARROW_UP = unichr(8593)
@@ -41,22 +36,16 @@ def init(bot):
     rates_delay = bot.config.get("exchangerates.delay", rates_delay)
     global rates_format
     rates_format = bot.config.get("exchangerates.format", rates_format)
-    bot.scheduler.append(getrates, "Exchagerates", rates_delay, bot.http_client)
+    bot.scheduler.append(getrates, "Exchagerates", rates_delay, bot.http)
 
 
-def getrates(client):
-    try:
-        logger.debug("Try to get new rates")
-        if not rates_url:
-            logger.debug("Can not get rates, no url specified!")
-            return
-        headers = {}
-        if len(rates["etag"]) > 0:
-            headers["If-None-Match"] = rates["etag"]
-            headers["If-Modified-Since"] = rates["date"]
-        response = client.fetch(rates_url, method="GET", headers=headers)
-        logger.debug(response.code)
-        # print response.body
+def getrates(http):
+    logger.debug("Try to get new rates")
+    if not rates_url:
+        logger.debug("Can not get rates, no url specified!")
+        return
+    code, response = http(rates_url, method="GET", etag=rates["etag"], date=rates["date"])
+    if code == 0:
         rvars = json.loads(response.body)
         if rvars:
             if "rates" in rvars:
@@ -69,16 +58,8 @@ def getrates(client):
                     rates["date"] = response.headers["Date"]
         else:
             logger.error("Can not get rates")
-        return None
-    except HTTPError as e:
-        if e.response.code == 304:
-            logger.debug("Rates did not change")
-            return
-        # HTTPError is raised for non-200 responses; the response
-        # can be found in e.response.
-        logger.error("HTTPError: " + str(e))
-    except Exception, exc:
-        logger.error("%s: %s" % (exc.__class__.__name__, exc))
+    elif code == 1:
+        logger.debug("Rates did not change")
 
 
 def get_onerate(base_rate, need_rate, fmt=None, arrow_up=ARROW_UP, arrow_down=ARROW_DOWN):
