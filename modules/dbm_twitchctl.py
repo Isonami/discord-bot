@@ -76,6 +76,7 @@ def main(self, message, *args, **kwargs):
                 else:
                     if not check_stream(self.http, stream["Name"]):
                         self.send(message.channel, "Stream %s not find. Can not add." % stream["Name"])
+                        return
                     stream["Channels"].append(message.channel.id)
                     ret = sd_update_channels(stream["Name"], stream["State"], stream["Channels"], stream["Options"])
                     if ret:
@@ -87,7 +88,7 @@ def main(self, message, *args, **kwargs):
                                   "Internel error while editing stream %s. See the logs." % stream["Name"])
             elif cmd == "del":
                 if message.channel.id in stream["Channels"]:
-                    stream["Channels"].pop(message.channel.id, 1)
+                    stream["Channels"].remove(message.channel.id)
                     ret = sd_update_channels(stream["Name"], stream["State"], stream["Channels"], stream["Options"])
                     if ret:
                         self.send(message.channel,
