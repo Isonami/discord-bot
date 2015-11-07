@@ -10,7 +10,7 @@ dealy = 600
 api_version = "v3"
 
 sql_init = """
-            CREATE TABLE IF NOT EXISTS Streams(Name TEXT, State INTEGER, Channels TEXT, Options TEXT);
+   CREATE TABLE IF NOT EXISTS Streams(ID INTEGER PRIMARY KEY, Name TEXT, State INTEGER, Channels TEXT, Options TEXT);
 """
 db_name = "twitch.db"
 
@@ -54,8 +54,8 @@ def sd_select_channels():
     ret = []
     for row in rows:
         if len(row) == 4:
-            ret.append({"Name": row[0], "State": row[1], "Options": row[3],
-                        "Channels": row[2].split(",") if len(row[2]) > 0 else []})
+            ret.append({"Name": row[1], "State": row[2], "Options": row[4],
+                        "Channels": row[3].split(",") if len(row[3]) > 0 else []})
     return ret
 
 

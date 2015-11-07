@@ -11,7 +11,7 @@ admin = True
 logger = logging.getLogger(__name__)
 
 sql_init = """
-            CREATE TABLE IF NOT EXISTS Streams(Name TEXT, State INTEGER, Channels TEXT, Options TEXT);
+  CREATE TABLE IF NOT EXISTS Streams(ID INTEGER PRIMARY KEY, Name TEXT, State INTEGER, Channels TEXT, Options TEXT);
 """
 db_name = "twitch.db"
 
@@ -32,13 +32,13 @@ def sd_select_stream(steam):
     row = sqlcon.request("SELECT * FROM Streams WHERE Name = ?;", steam, one=True)
     if not row or len(row) == 0:
         return {"Name": steam, "State": 1, "Options": None, "Channels": []}
-    return {"Name": row[0], "State": row[1], "Options": row[3],
-            "Channels": row[2].split(",") if len(row[2]) > 0 else []}
+    return {"Name": row[1], "State": row[2], "Options": row[4],
+            "Channels": row[3].split(",") if len(row[3]) > 0 else []}
 
 
 def sd_update_channels(stream, state, channels, options):
-    return sqlcon.commit("INSERT OR REPLACE INTO Streams VALUES (?, ?, ?, ?) WHERE Name = ?;", stream, state,
-                         ",".join(channels), options, stream)
+    return sqlcon.commit("INSERT OR REPLACE INTO Streams VALUES ((SELECT ID FROM Streams WHERE Name = ?), ?, ?, ?, ?);",
+                         stream, stream, state, ",".join(channels), options)
 
 
 def check_stream(http, stream):
