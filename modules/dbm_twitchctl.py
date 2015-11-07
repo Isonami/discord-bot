@@ -37,8 +37,8 @@ def sd_select_stream(steam):
 
 
 def sd_update_channels(stream, state, channels, options):
-    return sqlcon.commit("INSERT OR REPLACE INTO Streams VALUES (?, ?, ?, ?);", stream, state,
-                         ",".join(channels), options)
+    return sqlcon.commit("INSERT OR REPLACE INTO Streams VALUES (?, ?, ?, ?) WHERE Name = ?;", stream, state,
+                         ",".join(channels), options, stream)
 
 
 def check_stream(http, stream):
