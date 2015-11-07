@@ -19,8 +19,7 @@ import modules
 import updates
 import pyfibot
 from pyfibot.pbot import NAME as PBOTNAME
-from botlib import config, sql, scheduler, http
-import web
+from botlib import config, sql, scheduler, http, web
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 

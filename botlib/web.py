@@ -179,6 +179,7 @@ def main(main_dir, config, pipe):
         proc_count = 1
         http_server.start(proc_count)
         logger.debug("Http server started.")
-        tornado.ioloop.IOLoop.instance().start()
+        ioloop = tornado.ioloop.IOLoop()
+        ioloop.instance().start()
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
