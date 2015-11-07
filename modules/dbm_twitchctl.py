@@ -15,6 +15,18 @@ sql_init = """
 """
 db_name = "twitch.db"
 
+STRINGS = [
+    "Can not add/delete stream on private channels.",
+    "Can not get commad or stream name.",
+    "Stream {stream} in watch list already.",
+    "Stream {stream} not find. Can not add.",
+    "Stream {stream} added to watch list.",
+    "Internal error occured while adding stream {stream}.",
+    "Stream {stream} removed from watch list.",
+    "Internal error occured while removing stream {stream}.",
+    "Stream {stream} is not in watch list for this channel."
+]
+
 
 def init(bot):
     global sqlcon
@@ -60,45 +72,38 @@ def main(self, message, *args, **kwargs):
     try:
         self.typing(message.channel)
         if message.channel.is_private:
-            self.send(message.channel, "Can not add/delete stream on private channels.")
+            self.send(message.channel, STRINGS[0])
         else:
             cmd = kwargs.get("twitchcmd", None)
             name = kwargs.get("twitchname", None)
             if not cmd or not name:
-                self.send(message.channel, "Can not get commad or stream name.")
+                self.send(message.channel, STRINGS[1])
                 return
             stream = sd_select_stream(name)
             if cmd == "add":
                 if message.channel.id in stream["Channels"]:
-                    self.send(message.channel,
-                              "Stream %s already add for announce on channel %s." % (stream["Name"],
-                                                                                     message.channel.name))
+                    self.send(message.channel, STRINGS[2].format(stream=stream["Name"], channel=message.channel.name))
                 else:
                     if not check_stream(self.http, stream["Name"]):
-                        self.send(message.channel, "Stream %s not find. Can not add." % stream["Name"])
+                        self.send(message.channel, STRINGS[3].format(stream=stream["Name"]))
                         return
                     stream["Channels"].append(message.channel.id)
                     ret = sd_update_channels(stream["Name"], stream["State"], stream["Channels"], stream["Options"])
                     if ret:
-                        self.send(message.channel,
-                                  "Stream %s added for announce on channel %s." % (stream["Name"],
-                                                                                   message.channel.name))
+                        self.send(message.channel, STRINGS[4].format(stream=stream["Name"],
+                                                                     channel=message.channel.name))
                     else:
-                        self.send(message.channel,
-                                  "Internel error while editing stream %s. See the logs." % stream["Name"])
+                        self.send(message.channel, STRINGS[5].format(stream=stream["Name"]))
             elif cmd == "del":
                 if message.channel.id in stream["Channels"]:
                     stream["Channels"].remove(message.channel.id)
                     ret = sd_update_channels(stream["Name"], stream["State"], stream["Channels"], stream["Options"])
                     if ret:
-                        self.send(message.channel,
-                                  "Stream %s deleted from announce on channel %s." % (stream["Name"],
-                                                                                      message.channel.name))
+                        self.send(message.channel, STRINGS[6].format(stream=stream["Name"],
+                                                                     channel=message.channel.name))
                     else:
-                        self.send(message.channel,
-                                  "Internel error while editing stream %s. See the logs." % stream["Name"])
+                        self.send(message.channel, STRINGS[7].format(stream=stream["Name"]))
                 else:
-                    self.send(message.channel,
-                              "Stream %s is not announcing on channel %s." % (stream["Name"], message.channel.name))
+                    self.send(message.channel, STRINGS[8].format(stream=stream["Name"], channel=message.channel.name))
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))

@@ -167,6 +167,7 @@ def main(main_dir, config, pipe):
         global running
         global http_server
         running = True
+        ioloop = tornado.ioloop.IOLoop()
         app = tornado.web.Application(
             [
                 (r"/stats", MainHandler),
@@ -174,12 +175,11 @@ def main(main_dir, config, pipe):
             xsrf_cookies=False,
             debug=debug,
             )
-        http_server = tornado.httpserver.HTTPServer(app)
+        http_server = tornado.httpserver.HTTPServer(app, io_loop=ioloop)
         http_server.bind(port, address=address)
         proc_count = 1
         http_server.start(proc_count)
         logger.debug("Http server started.")
-        ioloop = tornado.ioloop.IOLoop()
-        ioloop.instance().start()
+        ioloop.start()
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
