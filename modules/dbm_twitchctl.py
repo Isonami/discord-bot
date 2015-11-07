@@ -19,7 +19,7 @@ STRINGS = [
     "Can not add/delete stream on private channels.",
     "Can not get commad or stream name.",
     "Stream {stream} in watch list already.",
-    "Stream {stream} not find. Can not add.",
+    "Stream {stream} does not exist.",
     "Stream {stream} added to watch list.",
     "Internal error occured while adding stream {stream}.",
     "Stream {stream} removed from watch list.",
