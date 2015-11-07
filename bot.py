@@ -140,7 +140,7 @@ class Bot(object):
                     desk = desk.format(cmd_start=cmd_start)
             reg = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "regex"]), reg)
             all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
-            self.cmds[mod_name] = {"CMD": cmd, "Description": desk, "Admin": False, "Private": False}
+            self.cmds[cmd_name] = {"CMD": cmd, "Description": desk, "Admin": False, "Private": False}
         logger.debug("Regex: %s", all_reg[:-1])
         self.reg = re.compile(all_reg[:-1])
         self.scheduler.start()
