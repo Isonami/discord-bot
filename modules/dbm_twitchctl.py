@@ -19,7 +19,7 @@ db_name = "twitch.db"
 def init(bot):
     global sqlcon
     sqlcon = bot.sqlcon(sql_init, db_name)
-    enable = bot.config.set("twitch.enable", False)
+    enable = bot.config.get("twitch.enable", False)
     if not enable:
         raise EnvironmentError("Can not start control module without scheduler module!")
     global streams_url
