@@ -112,8 +112,8 @@ class Bot(object):
             raise EnvironmentError("Can not start without http lib.")
         self.scheduler = scheduler.Scheduler()
         self.sqlcon = sql.init(self)
-        commands = modules.init(self)
         updates.init(self)
+        commands = modules.init(self)
         self.login = self.config.get("discord.login")
         self.password = self.config.get("discord.password")
         if not notrealy:
