@@ -9,14 +9,18 @@ from threading import Thread
 import signal
 import sys
 import types
+
 import discord
 import tornado.httpclient as httpclient
+
 import discord.endpoints as endpoints
+
 import modules
 import updates
 import pyfibot
 from pyfibot.pbot import NAME as PBOTNAME
-from botlib import config, sql, scheduler, web, http
+from botlib import config, sql, scheduler, http
+import web
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
