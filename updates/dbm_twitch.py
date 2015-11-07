@@ -24,6 +24,8 @@ def init(bot):
     online_msg = bot.config.get("twitch.message", online_msg)
     global dealy
     dealy = bot.config.get("twitch.dealy", dealy)
+    global api_version
+    api_version = bot.config.get("twitch.apiversion", api_version)
     ret_url = get_stream_url(bot.http)
     if ret_url:
         global streams_url
@@ -31,6 +33,13 @@ def init(bot):
         global sqlcon
         sqlcon = bot.sqlcon(sql_init, db_name)
         bot.scheduler.append(update, "Twitch", bot.config.get("twitch.dealy", dealy), bot)
+        global headers
+        headers = {
+            "Accept": "application/vnd.twitchtv.{version}+json".format(version=api_version)
+        }
+        bot.config.set("twitch.enable", True)
+        bot.config.set("twitch.baseurl", streams_url)
+        bot.config.set("twitch.headers", headers)
 
 
 def sd_select_state(steam):
@@ -57,9 +66,6 @@ def sd_set_state(stream, state):
 def update(bot):
     if not streams_url:
         return
-    headers = {
-        "Accept": "application/vnd.twitchtv.{version}+json".format(version=api_version)
-    }
     streams = sd_select_channels()
     for one_stream in streams:
         if len(one_stream["Channels"]) > 0:
@@ -67,7 +73,11 @@ def update(bot):
             code, response = bot.http(url, headers=headers)
             if code == 0:
                 logger.debug("Twitch response: %s", response.body)
-                ret_obj = json.loads(response.body)
+                try:
+                    ret_obj = json.loads(response.body)
+                except ValueError as e:
+                    logger.error("Can not parse json out: %s", unicode(e))
+                    continue
                 if "error" in ret_obj:
                     logger.error("Twitch API error: %s", ret_obj.get("message", ""))
                     continue

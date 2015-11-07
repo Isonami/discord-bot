@@ -1,4 +1,6 @@
 import logging
+from tornado.escape import url_escape
+import json
 
 command = r"twitch (?P<twitchcmd>(?:add)|(?:del)) " \
           r"(?:(?:https?://)?(?:www\.)?twitch\.tv/)?(?P<twitchname>[a-z0-9_]+)/?"
@@ -17,6 +19,13 @@ db_name = "twitch.db"
 def init(bot):
     global sqlcon
     sqlcon = bot.sqlcon(sql_init, db_name)
+    enable = bot.config.set("twitch.enable", False)
+    if not enable:
+        raise EnvironmentError("Can not start control module without scheduler module!")
+    global streams_url
+    streams_url = bot.config.get("twitch.baseurl")
+    global headers
+    headers = bot.config.get("twitch.headers")
 
 
 def sd_select_stream(steam):
@@ -30,6 +39,21 @@ def sd_select_stream(steam):
 def sd_update_channels(stream, state, channels, options):
     return sqlcon.commit("INSERT OR REPLACE INTO Streams VALUES (?, ?, ?, ?);", stream, state,
                          ",".join(channels), options)
+
+
+def check_stream(http, stream):
+    url = "/".join([streams_url, url_escape(stream)])
+    code, response = http(url, headers=headers)
+    if code == 0:
+        logger.debug("Twitch response: %s", response.body)
+        try:
+            ret_obj = json.loads(response.body)
+        except ValueError as e:
+            logger.error("Can not parse json out: %s", unicode(e))
+            return False
+        if "error" not in ret_obj:
+            return True
+    return False
 
 
 def main(self, message, *args, **kwargs):
@@ -50,6 +74,8 @@ def main(self, message, *args, **kwargs):
                               "Stream %s already add for announce on channel %s." % (stream["Name"],
                                                                                      message.channel.name))
                 else:
+                    if not check_stream(self.http, stream["Name"]):
+                        self.send(message.channel, "Stream %s not find. Can not add." % stream["Name"])
                     stream["Channels"].append(message.channel.id)
                     ret = sd_update_channels(stream["Name"], stream["State"], stream["Channels"], stream["Options"])
                     if ret:
