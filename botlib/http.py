@@ -51,7 +51,7 @@ def http_geter():
 
 
 def run():
-    io_loop = IOLoop()
+    io_loop = IOLoop.instance()
     io_loop.run_sync(http_geter)
 
 
