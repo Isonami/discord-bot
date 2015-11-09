@@ -4,7 +4,7 @@ import json
 
 command = r"twitch (?P<twitchcmd>(?:add)|(?:del)) " \
           r"(?:(?:https?://)?(?:www\.)?twitch\.tv/)?(?P<twitchname>[a-z0-9_]+)/?"
-description = "{cmd_start}twitch add|del stream_name|stream_url - add/delete twitch on this channel for announce " \
+description = "{cmd_start}twitch add|del stream_name|stream_url - add/delete twitch on this channel to watch list " \
               "(admin command)"
 admin = True
 

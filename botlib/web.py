@@ -104,6 +104,8 @@ def get_stats(bot):
 
 
 def start_web(bot):
+    global chat_limit
+    bot.config.get("web.limit")
     parent_pipe, child_pipe = Pipe()
     wp = Process(name="WebServer", target=main, args=(bot.config.get("main.dir"), bot.config.get("web"), child_pipe))
     wp.daemon = True
@@ -138,7 +140,6 @@ def main(main_dir, config, pipe):
     client_pipe = pipe
     global port
     global address
-    global chat_limit
     signal.signal(signal.SIGINT, sigterm_handler)
     signal.signal(signal.SIGTERM, sigterm_handler)
     json_file = os.path.join(main_dir, logging_file_name)
@@ -161,8 +162,6 @@ def main(main_dir, config, pipe):
             port = config["port"]
         if "address" in config:
             port = config["address"]
-        if "limit" in config:
-            chat_limit = config["limit"]
     try:
         global running
         global http_server
