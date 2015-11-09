@@ -105,7 +105,7 @@ def get_stats(bot):
 
 def start_web(bot):
     global chat_limit
-    bot.config.get("web.limit")
+    chat_limit = bot.config.get("web.limit", chat_limit)
     parent_pipe, child_pipe = Pipe()
     wp = Process(name="WebServer", target=main, args=(bot.config.get("main.dir"), bot.config.get("web"), child_pipe))
     wp.daemon = True
