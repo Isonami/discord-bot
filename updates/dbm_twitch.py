@@ -53,7 +53,7 @@ def sd_select_channels():
     rows = sqlcon.request("SELECT * FROM Streams;")
     ret = []
     for row in rows:
-        if len(row) == 4:
+        if len(row) == 5:
             ret.append({"Name": row[1], "State": row[2], "Options": row[4],
                         "Channels": row[3].split(",") if len(row[3]) > 0 else []})
     return ret
@@ -67,7 +67,6 @@ def update(bot):
     if not streams_url:
         return
     streams = sd_select_channels()
-    logger.debug(streams)
     for one_stream in streams:
         if len(one_stream["Channels"]) > 0:
             url = "/".join([streams_url, url_escape(one_stream["Name"])])
