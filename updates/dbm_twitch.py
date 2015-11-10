@@ -67,6 +67,7 @@ def update(bot):
     if not streams_url:
         return
     streams = sd_select_channels()
+    logger.debug(streams)
     for one_stream in streams:
         if len(one_stream["Channels"]) > 0:
             url = "/".join([streams_url, url_escape(one_stream["Name"])])
