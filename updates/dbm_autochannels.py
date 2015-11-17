@@ -46,6 +46,24 @@ def update_channels_db(server, db):
                     break
 
 
+def delete_perm(bot, member, role):
+    bot.client.remove_roles(member, role)
+    sleep(0.1)
+    n = 1
+    while role in member.roles and n < 30:
+        n += 1
+        sleep(0.1)
+
+
+def add_perm(bot, member, role):
+    bot.client.add_roles(member, role)
+    sleep(0.1)
+    n = 1
+    while role not in member.roles and n < 30:
+        n += 1
+        sleep(0.1)
+
+
 def update_text_perm(bot, member):
     try:
         voice = member.voice_channel
@@ -53,7 +71,7 @@ def update_text_perm(bot, member):
         if not voice:
             if member.id in local_db[server_name]:
                 channel_perm = channels_db[server_name][local_db[server_name][member.id]]
-                bot.client.remove_roles(member, channel_perm["role"])
+                delete_perm(bot, member, channel_perm["role"])
                 local_db[server_name].pop(member.id)
                 logger.debug("Delete role %s for user %s", channel_perm["role"].name, member.name)
         else:
@@ -61,10 +79,10 @@ def update_text_perm(bot, member):
                 return
             elif member.id in local_db[server_name]:
                 channel_perm = channels_db[server_name][local_db[server_name][member.id]]
-                bot.client.remove_roles(member, channel_perm["role"])
+                delete_perm(bot, member, channel_perm["role"])
                 logger.debug("Delete role %s for user %s", channel_perm["role"].name, member.name)
             if voice.id in channels_db[server_name]:
-                bot.client.add_roles(member, channels_db[server_name][voice.id]["role"])
+                add_perm(bot, member, channels_db[server_name][voice.id]["role"])
                 local_db[server_name][member.id] = voice.id
                 logger.debug("Set role %s for user %s", channels_db[server_name][voice.id]["role"].name, member.name)
                 return
