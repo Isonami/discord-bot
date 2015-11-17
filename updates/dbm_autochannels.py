@@ -2,7 +2,7 @@ import logging
 import string
 from Queue import Queue, Empty
 from time import sleep
-from threading import Thread
+from threading import Thread, Event
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +10,7 @@ perm = Queue()
 local_db = {}
 channels_db = {}
 role_pattern = "@{name}_text"
+wait_ok = Event()
 
 
 def update_all_permisions(bot, server, db, localdb):
@@ -48,20 +49,14 @@ def update_channels_db(server, db):
 
 def delete_perm(bot, member, role):
     bot.client.remove_roles(member, role)
-    sleep(0.1)
-    n = 1
-    while role in member.roles and n < 30:
-        n += 1
-        sleep(0.1)
+    wait_ok.wait(30)
+    wait_ok.clear()
 
 
 def add_perm(bot, member, role):
     bot.client.add_roles(member, role)
-    sleep(0.1)
-    n = 1
-    while role not in member.roles and n < 30:
-        n += 1
-        sleep(0.1)
+    wait_ok.wait(30)
+    wait_ok.clear()
 
 
 def update_text_perm(bot, member):
@@ -115,6 +110,10 @@ def main(bot):
     @bot.client.event
     def on_voice_state_update(arg):
         perm.put(arg)
+
+    @bot.client.event
+    def on_member_update(arg):
+        wait_ok.set()
 
 
 def init(bot):
