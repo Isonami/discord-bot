@@ -48,9 +48,11 @@ def update_channels_db(server, db):
 
 
 def delete_perm(bot, member, role):
+    logger.debug(role.id)
     bot.client.remove_roles(member, role)
     wait_ok.wait(30)
     wait_ok.clear()
+    logger.debug(member.roles)
 
 
 def add_perm(bot, member, role):
@@ -62,6 +64,7 @@ def add_perm(bot, member, role):
 def update_text_perm(bot, member):
     try:
         voice = member.voice_channel
+        logger.debug(member.roles)
         server_name = member.server.name
         if not voice:
             if member.id in local_db[server_name]:
