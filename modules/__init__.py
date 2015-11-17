@@ -20,7 +20,7 @@ def main():
 def init(bot):
     commands = []
     try:
-        dis = bot.config.get("disable.updates", [])
+        dis = bot.config.get("disable.modules", [])
         for obj in dbm_updates:
             if obj.__name__[len(mbase):] not in dis:
                 if hasattr(obj, "init"):

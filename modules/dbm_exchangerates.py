@@ -36,7 +36,7 @@ def init(bot):
     rates_delay = bot.config.get("exchangerates.delay", rates_delay)
     global rates_format
     rates_format = bot.config.get("exchangerates.format", rates_format)
-    bot.scheduler.append(getrates, "Exchagerates", rates_delay, bot.http)
+    bot.scheduler.append(getrates, "Exchangerates", rates_delay, bot.http)
 
 
 def getrates(http):
