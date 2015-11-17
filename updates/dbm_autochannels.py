@@ -1,8 +1,12 @@
 import logging
 import string
+from Queue import Queue, Empty
+from time import sleep
+from threading import Thread
 
 logger = logging.getLogger(__name__)
 
+perm = Queue()
 local_db = {}
 channels_db = {}
 role_pattern = "@{name}_text"
@@ -61,6 +65,18 @@ def update_text_perm(bot, member):
             bot.client.add_roles(member, channels_db[server_name][voice.id]["role"])
             local_db[server_name][member.id] = voice.id
             logger.debug("Set role %s for user %s", channels_db[server_name][voice.id]["role"].name, member.name)
+            return
+        local_db[server_name].pop(member.id, 1)
+
+
+def update_perm_th(bot):
+    while not bot.disconnect:
+        try:
+            item = perm.get()
+        except Empty:
+            sleep(5)
+            continue
+        update_text_perm(bot, item)
 
 
 def main(bot):
@@ -70,9 +86,13 @@ def main(bot):
         update_channels_db(server, channels_db[server.name])
         update_all_permisions(bot, server, channels_db[server.name], local_db[server.name])
 
+    bot_perm_th = Thread(name="BotPerm", target=update_perm_th, args=(bot,))
+    bot_perm_th.daemon = True
+    bot_perm_th.start()
+
     @bot.client.event
     def on_voice_state_update(arg):
-        update_text_perm(bot, arg)
+        perm.put(arg)
 
 
 def init(bot):
