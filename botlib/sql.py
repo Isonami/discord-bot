@@ -78,6 +78,7 @@ class Result(object):
         self._args = None
         self._sql_type = None
         self._result = None
+        self._timeout = True
         self._event.clear()
 
 
