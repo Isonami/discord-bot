@@ -76,11 +76,13 @@ def botplayth(bot):
         if randint(1, play_chance) == 1:
             games["id"], name = games["list"][randint(0, games["len"]-1)]
             logger.debug("Set game to: %s", name)
-            bot.client.ws.keep_alive.payload['op'] = 3
+            bot.client.change_status(game_id=games["id"])
+            # bot.client.ws.keep_alive.payload['op'] = 3
         elif games["id"]:
             logger.debug("End game")
             games["id"] = None
-            bot.client.ws.keep_alive.payload['op'] = 1
+            bot.client.change_status()
+            # bot.client.ws.keep_alive.payload['op'] = 1
         sleep(play_delay)
 
 
@@ -89,14 +91,14 @@ def bot_can_play_th(bot):
         sleep(5)
     if hasattr(bot.client.ws.keep_alive, "botcanplay"):
         return
-    seconds = bot.client.ws.keep_alive.seconds
-    bot.client.ws.keep_alive.stop.set()
-    logger.debug("Stop old keepalive handler")
-    bot.client.ws.keep_alive = KeepAliveHandler(1, bot.client.ws)
-    bot.client.ws.keep_alive.start()
-    sleep(1)
-    bot.client.ws.keep_alive.seconds = seconds
-    logger.debug("Start our keepalive handler")
+    # seconds = bot.client.ws.keep_alive.seconds
+    # bot.client.ws.keep_alive.stop.set()
+    # logger.debug("Stop old keepalive handler")
+    # bot.client.ws.keep_alive = KeepAliveHandler(1, bot.client.ws)
+    # bot.client.ws.keep_alive.start()
+    # sleep(1)
+    # bot.client.ws.keep_alive.seconds = seconds
+    # logger.debug("Start our keepalive handler")
     if not bot_play_th_started:
         bot_play_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))
         bot_play_th.daemon = True

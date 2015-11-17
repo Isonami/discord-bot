@@ -117,6 +117,7 @@ def main(bot):
     @bot.client.event
     def on_member_update(arg):
         wait_ok.set()
+        logger.debug(vars(arg))
 
 
 def init(bot):
