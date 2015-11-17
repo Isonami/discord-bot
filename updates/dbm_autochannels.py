@@ -49,7 +49,7 @@ def update_channels_db(server, db):
 
 def delete_perm(bot, member, role):
     logger.debug(role.id)
-    bot.client.remove_roles(member, tuple(filter(lambda x: x.id == role.id, member.roles)))
+    bot.client.remove_roles(member, *tuple(filter(lambda x: x.id == role.id, member.roles)))
     wait_ok.wait(30)
     wait_ok.clear()
     logger.debug(member.roles)
