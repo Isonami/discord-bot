@@ -47,26 +47,30 @@ def update_channels_db(server, db):
 
 
 def update_text_perm(bot, member):
-    voice = member.voice_channel
-    server_name = member.server.name
-    if not voice:
-        if member.id in local_db[server_name]:
-            channel_perm = channels_db[server_name][local_db[server_name][member.id]]
-            bot.client.remove_roles(member, channel_perm["role"])
-            local_db[server_name].pop(member.id)
-            logger.debug("Delete role %s for user %s", channel_perm["role"].name, member.name)
-    else:
-        if member.id in local_db[server_name] and voice.id == local_db[server_name][member.id]:
-            return
-        elif member.id in local_db[server_name]:
-            channel_perm = channels_db[server_name][local_db[server_name][member.id]]
-            bot.client.remove_roles(member, channel_perm["role"])
-        if voice.id in channels_db[server_name]:
-            bot.client.add_roles(member, channels_db[server_name][voice.id]["role"])
-            local_db[server_name][member.id] = voice.id
-            logger.debug("Set role %s for user %s", channels_db[server_name][voice.id]["role"].name, member.name)
-            return
-        local_db[server_name].pop(member.id, 1)
+    try:
+        voice = member.voice_channel
+        server_name = member.server.name
+        if not voice:
+            if member.id in local_db[server_name]:
+                channel_perm = channels_db[server_name][local_db[server_name][member.id]]
+                bot.client.remove_roles(member, channel_perm["role"])
+                local_db[server_name].pop(member.id)
+                logger.debug("Delete role %s for user %s", channel_perm["role"].name, member.name)
+        else:
+            if member.id in local_db[server_name] and voice.id == local_db[server_name][member.id]:
+                return
+            elif member.id in local_db[server_name]:
+                channel_perm = channels_db[server_name][local_db[server_name][member.id]]
+                bot.client.remove_roles(member, channel_perm["role"])
+                logger.debug("Delete role %s for user %s", channel_perm["role"].name, member.name)
+            if voice.id in channels_db[server_name]:
+                bot.client.add_roles(member, channels_db[server_name][voice.id]["role"])
+                local_db[server_name][member.id] = voice.id
+                logger.debug("Set role %s for user %s", channels_db[server_name][voice.id]["role"].name, member.name)
+                return
+            local_db[server_name].pop(member.id, 1)
+    except Exception, exc:
+        logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
 
 def update_perm_th(bot):
