@@ -20,11 +20,11 @@ def update_all_permisions(bot, server, db, localdb):
     for member in server.members:
         for role in all_roles:
             if role in member.roles:
-                bot.client.remove_roles(member, role)
+                delete_perm(bot, member, role)
     for cid, channel_perm in db.iteritems():
         for member in channel_perm["voice"].voice_members:
             localdb[member.id] = channel_perm["voice"].id
-            bot.client.add_roles(member, channel_perm["role"])
+            add_perm(bot, member, channel_perm["role"])
 
 
 def update_channels_db(server, db):
@@ -48,23 +48,20 @@ def update_channels_db(server, db):
 
 
 def delete_perm(bot, member, role):
-    logger.debug(role.id)
+    wait_ok.clear()
     bot.client.remove_roles(member, *tuple(filter(lambda x: x.id == role.id, member.roles)))
     wait_ok.wait(30)
-    wait_ok.clear()
-    logger.debug(member.roles)
 
 
 def add_perm(bot, member, role):
+    wait_ok.clear()
     bot.client.add_roles(member, role)
     wait_ok.wait(30)
-    wait_ok.clear()
 
 
 def update_text_perm(bot, member):
     try:
         voice = member.voice_channel
-        logger.debug(member.roles)
         server_name = member.server.name
         if not voice:
             if member.id in local_db[server_name]:
@@ -100,6 +97,10 @@ def update_perm_th(bot):
 
 
 def main(bot):
+    @bot.client.event
+    def on_member_update(arg):
+        wait_ok.set()
+
     for server in bot.client.servers:
         local_db[server.name] = {}
         channels_db[server.name] = {}
@@ -113,11 +114,6 @@ def main(bot):
     @bot.client.event
     def on_voice_state_update(arg):
         perm.put(arg)
-
-    @bot.client.event
-    def on_member_update(arg):
-        wait_ok.set()
-        logger.debug(vars(arg))
 
 
 def init(bot):
