@@ -1,5 +1,4 @@
-from time import sleep, time
-import json
+from time import sleep
 import logging
 import threading
 from tornado.httpclient import HTTPError
@@ -34,33 +33,6 @@ def get_game_list(bot):
         logger.error("HTTPError: " + str(e))
 
 
-class KeepAliveHandler(threading.Thread):
-    def __init__(self, seconds, socket, **kwargs):
-        threading.Thread.__init__(self, **kwargs)
-        self.botcanplay = True
-        self.seconds = seconds
-        self.socket = socket
-        self.stop = threading.Event()
-        self.payload = {
-            'op': 1,
-            'd': int(time())
-        }
-
-    def run(self):
-        while not self.stop.wait(self.seconds):
-            self.set_payload()
-
-            msg = 'Keeping websocket alive with timestamp {0}'
-            logger.debug(msg.format(self.payload['d']))
-            self.socket.send(json.dumps(self.payload))
-
-    def set_payload(self):
-        if self.payload['op'] == 1:
-            self.payload['d'] = int(time())
-        elif self.payload['op'] == 3:
-            self.payload['d'] = {"idle_since": None, "game_id": games['id']}
-
-
 def botplayth(bot):
     global bot_play_th_started
     bot_play_th_started = True
@@ -77,28 +49,14 @@ def botplayth(bot):
             games["id"], name = games["list"][randint(0, games["len"]-1)]
             logger.debug("Set game to: %s", name)
             bot.client.change_status(game_id=games["id"])
-            # bot.client.ws.keep_alive.payload['op'] = 3
         elif games["id"]:
             logger.debug("End game")
             games["id"] = None
             bot.client.change_status()
-            # bot.client.ws.keep_alive.payload['op'] = 1
         sleep(play_delay)
 
 
 def bot_can_play_th(bot):
-    if not hasattr(bot.client.ws, "keep_alive"):
-        sleep(5)
-    if hasattr(bot.client.ws.keep_alive, "botcanplay"):
-        return
-    # seconds = bot.client.ws.keep_alive.seconds
-    # bot.client.ws.keep_alive.stop.set()
-    # logger.debug("Stop old keepalive handler")
-    # bot.client.ws.keep_alive = KeepAliveHandler(1, bot.client.ws)
-    # bot.client.ws.keep_alive.start()
-    # sleep(1)
-    # bot.client.ws.keep_alive.seconds = seconds
-    # logger.debug("Start our keepalive handler")
     if not bot_play_th_started:
         bot_play_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))
         bot_play_th.daemon = True

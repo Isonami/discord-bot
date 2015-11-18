@@ -11,6 +11,7 @@ local_db = {}
 channels_db = {}
 role_pattern = "@{name}_text"
 wait_ok = Event()
+perm_th_started = False
 
 
 def update_all_permisions(bot, server, db, localdb):
@@ -97,23 +98,27 @@ def update_perm_th(bot):
 
 
 def main(bot):
-    @bot.client.event
-    def on_member_update(arg):
-        wait_ok.set()
+    if not perm_th_started:
+        global perm_th_started
+        perm_th_started = True
 
-    for server in bot.client.servers:
-        local_db[server.name] = {}
-        channels_db[server.name] = {}
-        update_channels_db(server, channels_db[server.name])
-        update_all_permisions(bot, server, channels_db[server.name], local_db[server.name])
+        @bot.client.event
+        def on_member_update(arg):
+            wait_ok.set()
 
-    bot_perm_th = Thread(name="BotPerm", target=update_perm_th, args=(bot,))
-    bot_perm_th.daemon = True
-    bot_perm_th.start()
+        for server in bot.client.servers:
+            local_db[server.name] = {}
+            channels_db[server.name] = {}
+            update_channels_db(server, channels_db[server.name])
+            update_all_permisions(bot, server, channels_db[server.name], local_db[server.name])
 
-    @bot.client.event
-    def on_voice_state_update(arg):
-        perm.put(arg)
+        bot_perm_th = Thread(name="BotPerm", target=update_perm_th, args=(bot,))
+        bot_perm_th.daemon = True
+        bot_perm_th.start()
+
+        @bot.client.event
+        def on_voice_state_update(arg):
+            perm.put(arg)
 
 
 def init(bot):
