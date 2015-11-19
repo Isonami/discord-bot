@@ -99,8 +99,7 @@ def update_perm_th(bot):
 
 def main(bot):
     if not perm_th_started:
-        global perm_th_started
-        perm_th_started = True
+        globals()["perm_th_started"] = True
 
         @bot.client.event
         def on_member_update(arg):
