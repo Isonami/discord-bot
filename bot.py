@@ -246,6 +246,14 @@ class Bot(object):
         return user.id in self.admins
 
 
+def botrun(dbot):
+    try:
+        dbot.client.run
+    except Exception, exc:
+        logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
+        exit()
+
+
 def main(notrealy=False):
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
@@ -274,7 +282,7 @@ def main(notrealy=False):
     except Exception, exc:
         logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
         exit()
-    th = Thread(name="Bot", target=bot.client.run)
+    th = Thread(name="Bot", target=botrun, args=(bot,))
     th.daemon = True
     th.start()
     if bot.config.get("web.enable"):
