@@ -248,7 +248,7 @@ class Bot(object):
 
 def botrun(dbot):
     try:
-        dbot.client.run
+        dbot.client.run()
     except Exception, exc:
         logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
         exit()
