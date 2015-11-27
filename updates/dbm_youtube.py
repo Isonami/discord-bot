@@ -36,8 +36,8 @@ def sd_select_channels():
     ret = []
     for row in rows:
         if len(row) == 6:
-            ret.append({"ID": row[0], "Name": row[1], "Channels": row[2].split(",") if len(row[3]) > 0 else [],
-                        "Type": row[4], "Lastid": row[4], "Lastdate": row[5]})
+            ret.append({"ID": row[0], "Name": row[1], "Channels": row[2].split(",") if len(row[2]) > 0 else [],
+                        "Type": row[3], "Lastid": row[4], "Lastdate": row[5]})
     return ret
 
 

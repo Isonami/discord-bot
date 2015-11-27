@@ -2,8 +2,8 @@ import logging
 
 command = r"youtube (?P<youtubecmd>(?:add)|(?:del)) " \
           r"(?:https?://)?(?:www\.)?youtube\.com/(?P<youtubetype>(?:user)|(?:channel))/(?P<youtubename>[a-z0-9_]+)/?"
-description = "{cmd_start}youtube add|del youtube_channel_url - add/delete youtube channel on this discord channel to " \
-              "watch list (admin command)"
+description = "{cmd_start}youtube add|del youtube_channel_url - add/delete youtube channel on this discord channel " \
+              "to watch list (admin command)"
 admin = True
 
 logger = logging.getLogger(__name__)
