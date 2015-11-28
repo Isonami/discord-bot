@@ -42,7 +42,7 @@ def sd_select_channels():
 
 
 def sd_set_state(cid, lastid, lastdate):
-    return sqlcon.commit("UPDATE YouChannels SET Lastid = ?, Lastdate = ? WHERE ID = ?;", cid, lastid, lastdate)
+    return sqlcon.commit("UPDATE YouChannels SET Lastid = ?, Lastdate = ? WHERE ID = ?;", lastid, lastdate, cid)
 
 
 def sd_select_channel(ytype, name):
