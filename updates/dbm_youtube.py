@@ -50,7 +50,7 @@ def sd_select_channel(ytype, name):
     if not row or len(row) == 0:
         return {"Name": name, "Channels": [], "Type": ytype, "Lastid": None, "Lastdate": None}
     return {"Name": row[1], "Channels": row[2].split(",") if len(row[3]) > 0 else [],
-            "Type": row[4], "Lastid": row[4], "Lastdate": row[5]}
+            "Type": row[3], "Lastid": row[4], "Lastdate": row[5]}
 
 
 def sd_update_channels(name, channels, ytype, lastid, lastdate):
