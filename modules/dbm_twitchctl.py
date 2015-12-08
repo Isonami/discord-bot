@@ -79,6 +79,8 @@ def main(self, message, *args, **kwargs):
             if not cmd or not name:
                 self.send(message.channel, STRINGS[1])
                 return
+            cmd = cmd.lower()
+            name = name.lower()
             stream = sd_select_stream(name)
             if cmd == "add":
                 if message.channel.id in stream["Channels"]:

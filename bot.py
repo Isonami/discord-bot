@@ -145,7 +145,7 @@ class Bot(object):
             all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
             self.cmds[cmd_name] = {"CMD": cmd, "Description": desk, "Admin": False, "Private": False}
         logger.debug("Regex: %s", all_reg[:-1])
-        self.reg = re.compile(all_reg[:-1])
+        self.reg = re.compile(all_reg[:-1], re.IGNORECASE)
         self.scheduler.start()
 
         @self.client.event
@@ -195,7 +195,7 @@ class Bot(object):
     def msg_proc(self, message):
         try:
             if message.content.startswith(cmd_start):
-                msg = ' '.join(message.content[len(cmd_start):].split()).lower()
+                msg = ' '.join(message.content[len(cmd_start):].split())
                 m = self.reg.match(msg)
                 if m:
                     rkwargs = m.groupdict()

@@ -48,6 +48,7 @@ def main(self, message, *args, **kwargs):
                 self.send(message.channel, STRINGS[1])
                 return
             you_chann = youtube_module["sd_select_channel"](types[str(youtype)], name)
+            cmd = cmd.lower()
             if cmd == "add":
                 if message.channel.id in you_chann["Channels"]:
                     self.send(message.channel, STRINGS[2].format(ychannel=you_chann["Name"],
