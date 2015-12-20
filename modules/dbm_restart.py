@@ -27,6 +27,7 @@ def restart():
     logger.error(pid)
     if pid == 0:
         try:
+            print restart_command
             os.system("nohup %s >/dev/null 2>&1 &" % restart_command)
             exit()
         except Exception, exc:
