@@ -2,24 +2,22 @@
 import logging
 import logging.config
 import json
-from time import sleep
+from time import sleep, time
 import os
 import re
 from threading import Thread
 import signal
 import sys
 import types
-
 import discord
 import tornado.httpclient as httpclient
-
 import discord.endpoints as endpoints
-
 import modules
 import updates
 import pyfibot
 from pyfibot.pbot import NAME as PBOTNAME
 from botlib import config, sql, scheduler, http, web
+from requests.packages.urllib3.connection import ConnectionError
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -248,7 +246,30 @@ class Bot(object):
 
 def botrun(dbot):
     try:
-        dbot.client.run()
+    #     dbot.client.run()
+    # except ConnectionError as exc:
+        exc = "Test"
+        logger.error("Can not connect (%s), restarting.", str(exc))
+        dtime = int(time())
+        try:
+            from modules.dbm_restart import restart
+            emerg_path = os.path.join(dbot.config.get("main.dir"), "emerg_restart")
+            if os.path.exists(emerg_path):
+                with open(emerg_path, 'r') as f:
+                    linedate = f.readline()
+                    print linedate
+                    if len(linedate) > 0:
+                        linedate = int(linedate)
+                        if dtime < linedate + 30:
+                            logger.error("Wait 5 minute to restart")
+                            sleep(30)
+            with open(emerg_path, 'w') as f:
+                dtime = str(int(time()))
+                f.write(dtime)
+            restart()
+        except ImportError as exc:
+            logger.error("No module restart, exiting.")
+            exit()
     except Exception, exc:
         logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
         exit()

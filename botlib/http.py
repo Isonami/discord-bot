@@ -58,7 +58,7 @@ def run():
 def init(bot):
     try:
         global httpclient
-        httpclient = AsyncHTTPClient()
+        httpclient = AsyncHTTPClient(max_buffer_size=1024*1024*3, max_body_size=1024*1024*3)
         global htqueue
         htqueue = Queue()
         global bot_main
