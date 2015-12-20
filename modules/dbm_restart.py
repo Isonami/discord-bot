@@ -24,6 +24,7 @@ def init(bot):
 
 def restart():
     pid = os.fork()
+    logger.error(pid)
     if pid == 0:
         try:
             os.system("nohup %s >/dev/null 2>&1 &" % restart_command)
