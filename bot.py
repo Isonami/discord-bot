@@ -246,9 +246,8 @@ class Bot(object):
 
 def botrun(dbot):
     try:
-    #     dbot.client.run()
-    # except ConnectionError as exc:
-        exc = "Test"
+        dbot.client.run()
+    except ConnectionError as exc:
         logger.error("Can not connect (%s), restarting.", str(exc))
         dtime = int(time())
         try:
@@ -260,9 +259,9 @@ def botrun(dbot):
                     print linedate
                     if len(linedate) > 0:
                         linedate = int(linedate)
-                        if dtime < linedate + 30:
+                        if dtime < linedate + 300:
                             logger.error("Wait 5 minute to restart")
-                            sleep(30)
+                            sleep(300)
             with open(emerg_path, 'w') as f:
                 dtime = str(int(time()))
                 f.write(dtime)
