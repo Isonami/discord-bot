@@ -266,7 +266,8 @@ def botrun(dbot):
             with open(emerg_path, 'w') as f:
                 dtime = str(int(time()))
                 f.write(dtime)
-            restart()
+            th = Thread(target=restart)
+            th.start()
         except ImportError as exc:
             logger.error("No module restart, exiting.")
             exit()
