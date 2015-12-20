@@ -252,7 +252,7 @@ def botrun(dbot):
         logger.error("Can not connect (%s), restarting.", str(exc))
         dtime = int(time())
         try:
-            from modules.dbm_restart import restart
+            from modules.dbm_restart import modrestart
             emerg_path = os.path.join(dbot.config.get("main.dir"), "emerg_restart")
             if os.path.exists(emerg_path):
                 with open(emerg_path, 'r') as f:
@@ -266,8 +266,7 @@ def botrun(dbot):
             with open(emerg_path, 'w') as f:
                 dtime = str(int(time()))
                 f.write(dtime)
-            th = Thread(target=restart)
-            th.start()
+            modrestart(dbot)
         except ImportError as exc:
             logger.error("No module restart, exiting.")
             exit()

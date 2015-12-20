@@ -24,10 +24,8 @@ def init(bot):
 
 def restart():
     pid = os.fork()
-    logger.error(pid)
     if pid == 0:
         try:
-            print restart_command
             os.system("nohup %s >/dev/null 2>&1 &" % restart_command)
             exit()
         except Exception, exc:
@@ -56,3 +54,14 @@ def main(self, message, *args, **kwargs):
             self.send(message.channel, "Syntax errors detected.")
     except Exception, exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
+
+
+def modrestart(bot):
+    global restart_command
+    restart_command = bot.config.get("restart.command", restart_command)
+    restart_command = restart_command.format(maindir=bot.config.get("main.dir"))
+    global syntax_command
+    syntax_command = bot.config.get("restart.syntax_command", syntax_command)
+    syntax_command = syntax_command.format(maindir=bot.config.get("main.dir"))
+    th = Thread(target=restart)
+    th.start()
