@@ -16,7 +16,7 @@ import modules
 import updates
 import pyfibot
 from pyfibot.pbot import NAME as PBOTNAME
-from botlib import config, sql, scheduler, http, web
+from botlib import config, sql, scheduler, http, web, unflip
 from requests.packages.urllib3.connection import ConnectionError
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
@@ -117,6 +117,7 @@ class Bot(object):
         commands = modules.init(self)
         self.login = self.config.get("discord.login")
         self.password = self.config.get("discord.password")
+        self.unflip = self.config.get("discord.unflip", False)
         if not notrealy:
             self.client = discord.Client()
             self.client.login(self.login, self.password)
@@ -214,6 +215,8 @@ class Bot(object):
                         if self.cmds[mod_name]["Private"] and not message.channel.is_private:
                             return
                         command(self, message, *args, **kwargs)
+            elif self.unflip and message.content.startswith(unflip.flip_str):
+                unflip.unflip(self, message.channel)
         except Exception, exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
