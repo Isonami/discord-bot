@@ -153,6 +153,11 @@ class Bot(object):
             self.msg_proc(message)
 
         @self.client.event
+        def on_message_edit(old_message, message):
+            logger.debug("Message edited ftom %s to %s", old_message, message)
+            self.msg_proc(message)
+
+        @self.client.event
         def on_ready():
             logger.debug('Logged in as %s (%s)', self.client.user.name, self.client.user.id)
             for function in self.on_ready:
