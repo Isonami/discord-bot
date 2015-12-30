@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, time
 import logging
 import threading
 from tornado.httpclient import HTTPError
@@ -58,6 +58,10 @@ def botplayth(bot):
         logger.error("Can not parse games list!")
         return
     while not bot.disconnect:
+        if bot.config.get("botcanplay.play_game"):
+            wait_time = bot.config.get("botcanplay.play_game") - time()
+            if wait_time > 0:
+                sleep(wait_time + 1)
         if randint(1, play_chance) == 1:
             games["id"] = games["list"][randint(0, games["len"]-1)]
             logger.debug("Set game to: %s", games["id"].name)
