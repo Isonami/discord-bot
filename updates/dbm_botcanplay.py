@@ -5,6 +5,8 @@ from tornado.httpclient import HTTPError
 import re
 from random import randint
 import discord.endpoints as endpoints
+import json
+from discord.game import Game
 
 logger = logging.getLogger(__name__)
 url_base = endpoints.BASE + "/{url}"
@@ -23,7 +25,7 @@ def get_game_list(bot):
         m = r.findall(response.body)
         if len(m) > 0:
             response = bot.http_client.fetch(url_base.format(url=m[-1]), method="GET")
-            r = re.compile('executables:\{(?:(?:[a-z0-9]+:\[[^\]]+\])?\}?,)+id:([0-9]+),name:\"([^\"]+)\"')
+            r = re.compile('executables:(\{(?:(?:[a-z0-9]+:\[[^\]]+\])?\}?,)+)id:([0-9]+),name:\"([^\"]+)\"')
             return r.findall(response.body)
         return []
 
@@ -33,11 +35,22 @@ def get_game_list(bot):
         logger.error("HTTPError: " + str(e))
 
 
+jsonformat = re.compile(r"([\[\{\]\}:,])([a-z0-9]+)([\[\{\]\}:,])")
+
+
+def dump(exe):
+    try:
+        return json.loads(jsonformat.sub(lambda x: '{}"{}"{}'.format(x.group(1), x.group(2), x.group(3)), exe))
+    except ValueError as e:
+        return {}
+# games["list"] = [{"executables": dump(exe[:-1]), "id": gid, "name": name} for exe, gid, name in get_game_list(bot)]
+
+
 def botplayth(bot):
     global bot_play_th_started
     bot_play_th_started = True
     while not games["list"]:
-        games["list"] = get_game_list(bot)
+        games["list"] = [Game(name=name) for exe, gid, name in get_game_list(bot)]
         games["len"] = len(games["list"])
         if not games["list"]:
             sleep(60)
@@ -46,9 +59,9 @@ def botplayth(bot):
         return
     while not bot.disconnect:
         if randint(1, play_chance) == 1:
-            games["id"], name = games["list"][randint(0, games["len"]-1)]
-            logger.debug("Set game to: %s", name)
-            bot.client.change_status(game_id=games["id"])
+            games["id"] = games["list"][randint(0, games["len"]-1)]
+            logger.debug("Set game to: %s", games["id"].name)
+            bot.client.change_status(game=games["id"])
         elif games["id"]:
             logger.debug("End game")
             games["id"] = None
