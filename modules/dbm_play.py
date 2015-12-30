@@ -25,6 +25,7 @@ def main(self, message, *args, **kwargs):
         delay = int(kwargs.get("playdelay", 0))
         if game and (dmin <= delay <= dmax):
             twait = time() + delay
+            game = game.strip()
             self.config.set("botcanplay.play_game", twait)
             logger.debug("Set game to: %s", game)
             self.client.change_status(game=Game(name=game))
