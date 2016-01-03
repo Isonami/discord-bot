@@ -286,7 +286,6 @@ def botrun(dbot):
 def main(notrealy=False):
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
-    sleep(5)
     try:
         with open(json_file) as json_config:
             global LOGGING

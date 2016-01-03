@@ -13,6 +13,7 @@ class MyDaemon(Daemon):
         sctl_daemon = threading.Thread(name='BotProccess', target=bot.main)
         sctl_daemon.start()
         signal.signal(signal.SIGTERM, bot.sigterm_handler)
+        sleep(5)
         self.flush_err()
         while True:
             sleep(1)

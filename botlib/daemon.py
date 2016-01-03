@@ -51,13 +51,13 @@ class Daemon(object):
 
         # redirect standard file descriptors
         sys.stdout.flush()
-        #sys.stderr.flush()
+        # sys.stderr.flush()
         si = file(self.stdin, 'r')
         so = file(self.stdout, 'a+')
-        #se = file(self.stderr, 'a+', 0)
+        # se = file(self.stderr, 'a+', 0)
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
-        #os.dup2(se.fileno(), sys.stderr.fileno())
+        # os.dup2(se.fileno(), sys.stderr.fileno())
 
         # write pidfile
         atexit.register(self.delpid)
@@ -65,9 +65,8 @@ class Daemon(object):
         try:
             file(self.pidfile, 'w+').write("%s\n" % pid)
         except IOError as err:
-            se = file("/dev/stderr", 'a+', 0)
             message = str(err) + "\n"
-            se.write(message)
+            sys.stderr.write(message)
 
     def delpid(self):
         os.remove(self.pidfile)
