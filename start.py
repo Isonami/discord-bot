@@ -15,7 +15,7 @@ class MyDaemon(Daemon):
         signal.signal(signal.SIGTERM, bot.sigterm_handler)
         sleep(5)
         self.flush_err()
-        while True:
+        while sctl_daemon.isAlive():
             sleep(1)
 
 
