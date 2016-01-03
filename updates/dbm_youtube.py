@@ -58,6 +58,12 @@ def sd_update_channels(name, channels, ytype, lastid, lastdate):
                          "Type = ?), ?, ?, ?, ?, ?);", name, ytype, name, ",".join(channels), ytype, lastid, lastdate)
 
 
+def format_code(string):
+    if type(string) is unicode:
+        return string.encode('utf-8')
+    return string
+
+
 def get_last_video(http, name, ytype):
     url = base_url.format(channel=url_escape(name), type=url_escape(ytype))
     code, response = http(url)
@@ -72,10 +78,11 @@ def get_last_video(http, name, ytype):
             ent = ents[0]
             video = {}
             try:
-                video["title"] = ent.getElementsByTagName('title')[0].childNodes[0].data
+                video["title"] = format_code(ent.getElementsByTagName('title')[0].childNodes[0].data)
                 video["id"] = ent.getElementsByTagName('yt:videoId')[0].childNodes[0].data
                 vdate = ent.getElementsByTagName('published')[0].childNodes[0].data
-                video["author"] = ent.getElementsByTagName('author')[0].getElementsByTagName('name')[0].childNodes[0].data
+                video["author"] = \
+                    format_code(ent.getElementsByTagName('author')[0].getElementsByTagName('name')[0].childNodes[0].data)
                 video["url"] = ent.getElementsByTagName('link')[0].getAttribute('href')
             except ValueError, e:
                 logger.error("Can not find element: %s", e)
@@ -99,7 +106,7 @@ def update(bot):
                     sd_set_state(you_chann["ID"], video["id"], video["date"])
                     msg = new_msg.format(name=video["author"], title=video["title"], url=video["url"])
                     for channel_id in you_chann["Channels"]:
-                        bot.send(str(channel_id), msg)
+                        bot.send(bot.client.get_channel(str(channel_id)), msg)
 
 
 def get_stream_url(http):
