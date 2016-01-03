@@ -67,6 +67,7 @@ class Daemon(object):
         except IOError as err:
             message = str(err) + "\n"
             sys.stderr.write(message)
+            sys.exit(1)
 
     def delpid(self):
         os.remove(self.pidfile)
