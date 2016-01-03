@@ -63,10 +63,10 @@ def sd_set_state(stream, state):
     return sqlcon.commit("UPDATE Streams SET State = ? WHERE Name = ?;", state, stream)
 
 
-def format_code(str):
-    if type(str) is unicode:
-        return str.encode('utf-8')
-    return str
+def format_code(string):
+    if type(string) is unicode:
+        return string.encode('utf-8')
+    return string
 
 
 def update(bot):
@@ -92,10 +92,13 @@ def update(bot):
                     if one_stream["State"] != 0:
                         logger.debug("Stream %s going ONLINE", one_stream["Name"])
                         sd_set_state(one_stream["Name"], 0)
-                        msg = online_msg.format(url=stream["channel"].get("url", ""),
-                                                name=format_code(stream["channel"].get("name", "")),
-                                                title=stream["channel"].get("status", ""),
-                                                game=format_code(stream["channel"].get("game", "")))
+                        try:
+                            msg = online_msg.format(url=stream["channel"].get("url", ""),
+                                                    name=format_code(stream["channel"].get("name", "")),
+                                                    title=stream["channel"].get("status", ""),
+                                                    game=format_code(stream["channel"].get("game", "")))
+                        except Exception as exc:
+                            logger.error(str(exc))
                         for channel_id in one_stream["Channels"]:
                             bot.send(str(channel_id), msg)
                 else:
