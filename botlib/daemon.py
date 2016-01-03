@@ -46,13 +46,13 @@ class Daemon(object):
 
         # redirect standard file descriptors
         sys.stdout.flush()
-        sys.stderr.flush()
+        #sys.stderr.flush()
         si = file(self.stdin, 'r')
         so = file(self.stdout, 'a+')
-        se = file(self.stderr, 'a+', 0)
+        #se = file(self.stderr, 'a+', 0)
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
+        #os.dup2(se.fileno(), sys.stderr.fileno())
 
         # write pidfile
         atexit.register(self.delpid)
