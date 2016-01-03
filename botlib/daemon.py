@@ -14,6 +14,11 @@ class Daemon(object):
         self.stderr = stderr
         self.pidfile = pidfile
 
+    def flush_err(self):
+        sys.stderr.flush()
+        se = file(self.stderr, 'a+', 0)
+        os.dup2(se.fileno(), sys.stderr.fileno())
+
     def daemonize(self):
         """
         do the UNIX double-fork magic, see Stevens' "Advanced

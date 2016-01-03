@@ -286,20 +286,18 @@ def botrun(dbot):
 def main(notrealy=False):
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
+    sleep(5)
     try:
         with open(json_file) as json_config:
             global LOGGING
             LOGGING = json.load(json_config)
     except IOError as e:
-        se = file("/dev/stderr", 'a+', 0)
-        message = "Can not open logging.json file: %s" % str(e)
-        os.dup2(se.fileno(), sys.stderr.fileno())
+        message = "Can not open logging.json file: %s \n" % str(e)
         sys.stderr.write(message)
         exit()
     except ValueError as e:
-        se = file("/dev/stderr", 'a+', 0)
-        message = "Can not open load json logging file: %s" % str(e)
-        se.write(message)
+        message = "Can not open load json logging file: %s \n " % str(e)
+        sys.stderr.write(message)
         exit()
     logging.config.dictConfig(LOGGING)
     global logger
