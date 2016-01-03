@@ -99,14 +99,14 @@ def update(bot):
                                                     title=stream["channel"].get("status", ""),
                                                     game=format_code(stream["channel"].get("game", "")))
                         except Exception as exc:
-                            logger.error(str(exc))
+                            logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
                             return
                         for channel_id in one_stream["Channels"]:
                             logger.debug(channel_id)
                             try:
-                                bot.send(str(channel_id), msg)
+                                bot.send(bot.client.get_channel(str(channel_id)), msg)
                             except Exception as exc:
-                                logger.error(str(exc))
+                                logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
                 else:
                     if one_stream["State"] != 1:
                         logger.debug("Stream %s going OFFLINE", one_stream["Name"])
