@@ -293,11 +293,11 @@ def main(notrealy=False):
     except IOError as e:
         message = "Can not open logging.json file: %s \n" % str(e)
         sys.stderr.write(message)
-        exit()
+        sys.exit(1)
     except ValueError as e:
         message = "Can not open load json logging file: %s \n " % str(e)
         sys.stderr.write(message)
-        exit()
+        sys.exit(1)
     logging.config.dictConfig(LOGGING)
     global logger
     logger = logging.getLogger(__name__)
