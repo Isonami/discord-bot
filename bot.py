@@ -293,7 +293,8 @@ def main(notrealy=False):
     except IOError as e:
         se = file("/dev/stderr", 'a+', 0)
         message = "Can not open logging.json file: %s" % str(e)
-        se.write(message)
+        os.dup2(se.fileno(), sys.stderr.fileno())
+        sys.stderr.write(message)
         exit()
     except ValueError as e:
         se = file("/dev/stderr", 'a+', 0)
