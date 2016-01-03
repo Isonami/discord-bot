@@ -103,7 +103,10 @@ def update(bot):
                             return
                         for channel_id in one_stream["Channels"]:
                             logger.debug(channel_id)
-                            bot.send(str(channel_id), msg)
+                            try:
+                                bot.send(str(channel_id), msg)
+                            except Exception as exc:
+                                logger.error(str(exc))
                 else:
                     if one_stream["State"] != 1:
                         logger.debug("Stream %s going OFFLINE", one_stream["Name"])
