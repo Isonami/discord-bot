@@ -292,10 +292,14 @@ def main(notrealy=False):
                 global LOGGING
                 LOGGING = json.load(json_config)
         except IOError as e:
-            print "Can not open logging.json file: %s" % str(e)
+            se = file("/dev/stderr", 'a+', 0)
+            message = "Can not open logging.json file: %s" % str(e)
+            se.write(message)
             exit()
         except ValueError as e:
-            print "Can not open load json logging file: %s" % str(e)
+            se = file("/dev/stderr", 'a+', 0)
+            message = "Can not open load json logging file: %s" % str(e)
+            se.write(message)
             exit()
     logging.config.dictConfig(LOGGING)
     global logger
