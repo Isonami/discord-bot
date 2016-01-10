@@ -25,14 +25,14 @@ def init(bot):
     sqlcon = bot.sqlcon(sql_init, db_name)
 
 
-class Fakeuser(object):
-    id = None
+class Mention(object):
+    var = None
 
     def __init__(self, server, mid):
         for member in server.members:
             if mid == member.id:
-                self.id = {"username": member.name, "id": member.id, "discriminator": member.discriminator,
-                           "avatar": member.avatar}
+                self.var = {"username": member.name, "id": member.id, "discriminator": member.discriminator,
+                            "avatar": member.avatar}
                 break
 
 
@@ -95,11 +95,11 @@ def main(self, message, *args, **kwargs):
                 lst = []
                 m_lst = []
                 for one_id in lst_id:
-                    user = Fakeuser(message.server, one_id)
-                    if user.id:
-                        m_lst.append(user)
+                    user = Mention(message.server, one_id)
+                    if user.var:
+                        m_lst.append(user.var)
                         lst.append(mention_fmt.format(mid=one_id))
-                self.send(message.channel, msg_fmt.format(name=name, lst=" ".join(lst)), mentions=m_lst)
+                self.send_with_metions(message.channel, msg_fmt.format(name=name, lst=" ".join(lst)), mentions=m_lst)
             return
         self.send(message.channel, "Can not parse command")
     except Exception as exc:

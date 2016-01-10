@@ -227,6 +227,8 @@ class Bot(object):
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
     def typing(self, channel):
+        self.client.send_typing(channel)
+        """
         if channel:
             if hasattr(channel, 'id'):
                 url = "{0}/{1}/typing".format(endpoints.CHANNELS, channel.id)
@@ -234,7 +236,25 @@ class Bot(object):
                 state, resp = self.http(url, method="POST", headers=self.client.headers)
                 if state == 0:
                     return True
+        """
         return False
+
+    def send_with_metions(self, channel, message, mentions=None):
+        if type(message) is unicode:
+            message = message.encode('utf-8')
+        if channel:
+            if hasattr(channel, 'id'):
+                url = '{base}/{id}/messages'.format(base=endpoints.CHANNELS, id=channel.id)
+                payload = {
+                    'content': message,
+                    'mentions': []
+                }
+                if mentions:
+                    payload['mentions'] = mentions
+                logger.debug("Send message: %s with mentions %s", message, mentions)
+                state, resp = self.http(url, method="POST", headers=self.client.headers, body=json.dumps(payload))
+                if state == 0:
+                    return True
 
     def logout(self):
         try:
