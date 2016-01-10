@@ -15,25 +15,12 @@ mention_re = re.compile(r"<@([0-9]+)>")
 mention_fmt = "<@{mid}>"
 msg_fmt = "{name} mention: {lst}"
 
-mention_fake_fmt = '{{"username":"{}","id":"{}","discriminator":"{}","avatar":"{}"}}'
-
 logger = logging.getLogger(__name__)
 
 
 def init(bot):
     global sqlcon
     sqlcon = bot.sqlcon(sql_init, db_name)
-
-
-class Mention(object):
-    var = None
-
-    def __init__(self, server, mid):
-        for member in server.members:
-            if mid == member.id:
-                self.var = {"username": member.name, "id": member.id, "discriminator": member.discriminator,
-                            "avatar": member.avatar}
-                break
 
 
 def add_or_update_mention_list(name, lst):
@@ -93,14 +80,10 @@ def main(self, message, *args, **kwargs):
             lst_id = select_mention_list(name)
             if len(lst_id) > 0:
                 lst = []
-                m_lst = []
                 for one_id in lst_id:
-                    user = Mention(message.server, one_id)
-                    if user.var:
-                        m_lst.append(user.var)
-                        lst.append(mention_fmt.format(mid=one_id))
-                self.send_with_metions(message.channel, msg_fmt.format(name=name, lst=" ".join(lst)), mentions=m_lst)
+                    lst.append(mention_fmt.format(mid=one_id))
+                self.send(message.channel, msg_fmt.format(name=name, lst=" ".join(lst)), mentions=None)
             return
-        self.send(message.channel, "Can not parse command")
+        self.send(message.channel, "Can not parse command.")
     except Exception as exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))

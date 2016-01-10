@@ -239,21 +239,6 @@ class Bot(object):
         """
         return False
 
-    def send_with_metions(self, channel, message, mentions=None):
-        if type(message) is unicode:
-            message = message.encode('utf-8')
-        if channel:
-            if hasattr(channel, 'id'):
-                url = '{base}/{id}/messages'.format(base=endpoints.CHANNELS, id=channel.id)
-                payload = {
-                    'content': message,
-                    'mentions': []
-                }
-                logger.debug("Send message: %s with mentions %s", message, mentions)
-                state, resp = self.http(url, method="POST", headers=self.client.headers, body=json.dumps(payload))
-                if state == 0:
-                    return True
-
     def logout(self):
         try:
             logger.debug("Logout from server")
