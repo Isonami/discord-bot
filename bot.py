@@ -192,10 +192,10 @@ class Bot(object):
                 logger.error("%s: %s" % (exc.__class__.__name__, exc))
                 sleep(60)
 
-    def send(self, channel, message):
+    def send(self, channel, message, **kwargs):
         if type(message) is unicode:
             message = message.encode('utf-8')
-        self.client.send_message(channel, message)
+        self.client.send_message(channel, message, **kwargs)
 
     def msg_proc(self, message):
         try:
