@@ -81,7 +81,7 @@ def main(self, message, *args, **kwargs):
                 lst = []
                 for one_id in lst_id:
                     lst.append(mention_fmt.format(mid=one_id))
-                self.send(message.channel, msg_fmt.format(name=name, lst=lst))
+                self.send(message.channel, msg_fmt.format(name=name, lst=" ".join(lst)))
             return
         self.send(message.channel, "Can not parse command")
     except Exception as exc:
