@@ -1,8 +1,8 @@
 import logging
 import re
 
-command = r"@(?P<mentionname>[a-z0-9])|(?:(?P<mentionedit>(?:add)|(?:del)|(?:upd))" \
-          r"(?P<editmentionname>[a-z0-9])(?P<mentionlist>(?: [\S]+){0,100}))"
+command = r"@(?:(?P<mentionedit>(?:add)|(?:del)|(?:upd))" \
+          r"(?P<editmentionname>[a-z0-9])(?P<mentionlist>(?: [\S]+){0,100}))|(?P<mentionname>[a-z0-9])"
 description = "{cmd_start}@('mention_name' or 'add|upd|del mention_name name_list_splited_by_space') - send multi " \
               "mention or create it"
 
