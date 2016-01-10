@@ -44,7 +44,7 @@ def get_id_list(in_lst, message):
             lst.append(m.group(1))
         else:
             for member in message.server.members:
-                if str(member).lower() == in_one.lower():
+                if member.name.lower() == in_one.lower():
                     lst.append(member.id)
     return lst
 
