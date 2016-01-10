@@ -27,10 +27,12 @@ def init(bot):
 
 class Fakeuser(object):
     id = None
+
     def __init__(self, server, mid):
         for member in server.members:
             if mid == member.id:
-                self.id = mention_fake_fmt.format(member.name, member.id, member.discriminator, member.avatar)
+                self.id = {"username": member.name, "id": member.id, "discriminator": member.discriminator,
+                           "avatar": member.avatar}
                 break
 
 
