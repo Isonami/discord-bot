@@ -249,8 +249,6 @@ class Bot(object):
                     'content': message,
                     'mentions': []
                 }
-                if mentions:
-                    payload['mentions'] = mentions
                 logger.debug("Send message: %s with mentions %s", message, mentions)
                 state, resp = self.http(url, method="POST", headers=self.client.headers, body=json.dumps(payload))
                 if state == 0:
