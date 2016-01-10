@@ -3,8 +3,8 @@ from time import time, sleep
 from discord.game import Game
 from threading import Thread
 
-command = r"play (?P<playdelay>[0-9]+)(?P<playgame>( [\S]+){1,5})"
-description = "{cmd_start}play game_name time - play game for time in seconds (admin command)"
+command = r"play (?P<playdelay>[0-9]+)(?P<playgame>(?: [\S]+){1,5})"
+description = "{cmd_start}play time game_name - play game for time in seconds (admin command)"
 admin = True
 
 logger = logging.getLogger(__name__)
