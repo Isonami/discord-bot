@@ -52,7 +52,7 @@ def get_id_list(in_lst, message):
 def main(self, message, *args, **kwargs):
     try:
         if message.channel.is_private:
-            self.send(message.channel, "Not work in private chats")
+            self.send(message.channel, "Not work in private chats.")
             return
         if "mentionedit" in kwargs and "editmentionname" in kwargs:
             if self.is_admin(message.author):
