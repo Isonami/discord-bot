@@ -1,8 +1,8 @@
 import logging
 import re
 
-command = r"@(?:(?P<mentionedit>(?:add)|(?:del)|(?:upd)) " \
-          r"(?P<editmentionname>[a-z0-9]+)(?P<mentionlist>(?: [\S]+){0,100}))|(?P<mentionname>[a-z0-9]+)"
+command = r"@(?:(?:(?P<mentionedit>(?:add)|(?:del)|(?:upd)) " \
+          r"(?P<editmentionname>[a-z0-9]+)(?P<mentionlist>(?: [\S]+){0,100}))|(?P<mentionname>[a-z0-9]+))"
 description = "{cmd_start}@('mention_name' or 'add|upd|del mention_name name_list_splited_by_space') - send multi " \
               "mention or create it"
 
@@ -29,9 +29,9 @@ def add_or_update_mention_list(name, lst):
 
 
 def select_mention_list(name):
-    row = sqlcon.request("SELECT * FROM Mentions WHERE Name = ?;", name, one=True)
+    row = sqlcon.request("SELECT List FROM Mentions WHERE Name = ?;", name, one=True)
     if row:
-        return row.split(",")
+        return row[0].split(",")
     else:
         return []
 
