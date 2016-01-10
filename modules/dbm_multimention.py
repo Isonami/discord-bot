@@ -31,9 +31,9 @@ def add_or_update_mention_list(name, lst):
 def select_mention_list(name):
     row = sqlcon.request("SELECT List FROM Mentions WHERE Name = ?;", name, one=True)
     if row:
-        return row[0].split(",")
-    else:
-        return []
+        if len(row[0]) > 0:
+            return row[0].split(",")
+    return []
 
 
 def get_id_list(in_lst, message):
