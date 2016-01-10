@@ -24,8 +24,8 @@ def init(bot):
 
 
 def add_or_update_mention_list(name, lst):
-    return sqlcon.commit("INSERT INTO Mentions VALUES ((SELECT ID FROM Mentions WHERE Name = ?), ?, ?)", name, name,
-                         ",".join(lst))
+    return sqlcon.commit("INSERT OR REPLACE INTO Mentions VALUES ((SELECT ID FROM Mentions WHERE Name = ?), ?, ?)",
+                         name, name, ",".join(lst))
 
 
 def select_mention_list(name):
