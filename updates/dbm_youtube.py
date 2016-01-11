@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 import json
 from tornado.escape import url_escape

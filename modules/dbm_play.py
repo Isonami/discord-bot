@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 from time import time, sleep
 from discord.game import Game

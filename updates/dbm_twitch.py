@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 import json
 from tornado.escape import url_escape
@@ -78,7 +79,7 @@ def update(bot):
             url = "/".join([streams_url, url_escape(one_stream["Name"])])
             code, response = bot.http(url, headers=headers)
             if code == 0:
-                logger.debug("Twitch response: %s", format_code(response.body))
+                logger.debug(u"Twitch response: %s", response.body)
                 try:
                     ret_obj = json.loads(response.body)
                 except ValueError as e:
@@ -96,17 +97,17 @@ def update(bot):
 
                             msg = online_msg.format(url=stream["channel"].get("url", ""),
                                                     name=format_code(stream["channel"].get("name", "")),
-                                                    title=stream["channel"].get("status", ""),
+                                                    title=format_code(stream["channel"].get("status", "")),
                                                     game=format_code(stream["channel"].get("game", "")))
                         except Exception as exc:
-                            logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
+                            logger.error("%s: %s" % (exc.__class__.__name__, exc))
                             return
                         for channel_id in one_stream["Channels"]:
                             logger.debug(channel_id)
                             try:
                                 bot.send(bot.client.get_channel(str(channel_id)), msg)
                             except Exception as exc:
-                                logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
+                                logger.error("%s: %s" % (exc.__class__.__name__, exc))
                 else:
                     if one_stream["State"] != 1:
                         logger.debug("Stream %s going OFFLINE", one_stream["Name"])

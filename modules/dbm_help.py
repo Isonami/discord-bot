@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 command = r"h(?:elp)?"
 helpd = "h(elp) - show help"
 description = "{cmd_start}%s" % helpd

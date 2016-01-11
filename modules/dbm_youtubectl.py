@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 
 command = r"youtube (?P<youtubecmd>(?:add)|(?:del)) " \

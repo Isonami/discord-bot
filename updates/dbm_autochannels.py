@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 import string
 from Queue import Queue, Empty

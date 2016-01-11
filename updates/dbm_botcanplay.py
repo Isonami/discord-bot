@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from time import sleep, time
 import logging
 import threading
