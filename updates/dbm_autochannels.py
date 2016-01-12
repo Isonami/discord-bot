@@ -103,7 +103,7 @@ def main(bot):
         globals()["perm_th_started"] = True
 
         @bot.client.event
-        def on_member_update(arg):
+        def on_member_update(*args):
             wait_ok.set()
 
         for server in bot.client.servers:
