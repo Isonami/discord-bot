@@ -19,6 +19,7 @@ from pyfibot.pbot import NAME as PBOTNAME
 from botlib import config, sql, scheduler, http, web, unflip
 from requests.packages.urllib3.connection import ConnectionError
 from ws4py.exc import HandshakeError
+from requests import HTTPError
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -259,7 +260,7 @@ class Bot(object):
 def botrun(dbot):
     try:
         dbot.client.run()
-    except (ConnectionError, discord.GatewayNotFound, HandshakeError) as exc:
+    except (ConnectionError, discord.GatewayNotFound, HandshakeError, HTTPError) as exc:
         logger.error("Can not connect (%s), restarting.", str(exc))
         dtime = int(time())
         try:
@@ -282,7 +283,7 @@ def botrun(dbot):
             logger.error("No module restart, exiting.")
             exit()
     except Exception, exc:
-        logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
+        logger.error("Bot stop working: %s: %s" % (exc.__class__.__name__, exc))
         exit()
 
 
