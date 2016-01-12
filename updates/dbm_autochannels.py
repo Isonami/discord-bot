@@ -103,7 +103,7 @@ def main(bot):
         globals()["perm_th_started"] = True
 
         @bot.client.event
-        def on_member_update(*args):
+        def on_member_update(*args, **kwargs):
             wait_ok.set()
 
         for server in bot.client.servers:
@@ -117,8 +117,8 @@ def main(bot):
         bot_perm_th.start()
 
         @bot.client.event
-        def on_voice_state_update(arg):
-            perm.put(arg)
+        def on_voice_state_update(*args, **kwargs):
+            perm.put(args[0])
 
 
 def init(bot):
