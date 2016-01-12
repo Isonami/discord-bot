@@ -57,12 +57,12 @@ def main(self, message, *args, **kwargs):
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
 
-def modrestart(bot):
+def modrestart(config):
     global restart_command
-    restart_command = bot.config.get("restart.command", restart_command)
+    restart_command = config.get("restart.command", restart_command)
     restart_command = restart_command.format(maindir=bot.config.get("main.dir"))
     global syntax_command
-    syntax_command = bot.config.get("restart.syntax_command", syntax_command)
-    syntax_command = syntax_command.format(maindir=bot.config.get("main.dir"))
+    syntax_command = config.get("restart.syntax_command", syntax_command)
+    syntax_command = syntax_command.format(maindir=config.get("main.dir"))
     th = Thread(target=restart)
     th.start()

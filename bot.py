@@ -257,34 +257,38 @@ class Bot(object):
         return user.id in self.admins
 
 
+def botrestart(bconfig, exc):
+    logger.error("Can not connect (%s), restarting.", str(exc))
+    dtime = int(time())
+    try:
+        from modules.dbm_restart import modrestart
+        emerg_path = os.path.join(bconfig.get("main.dir"), "emerg_restart")
+        if os.path.exists(emerg_path):
+            with open(emerg_path, 'r') as f:
+                linedate = f.readline()
+                print linedate
+                if len(linedate) > 0:
+                    linedate = int(linedate)
+                    if dtime < linedate + 300:
+                        logger.error("Wait 5 minute to restart")
+                        sleep(300)
+        with open(emerg_path, 'w') as f:
+            dtime = str(int(time()))
+            f.write(dtime)
+        modrestart(bconfig)
+    except ImportError as exc:
+        logger.error("No module restart, exiting.")
+        sys.exit()
+
+
 def botrun(dbot):
     try:
         dbot.client.run()
     except (ConnectionError, discord.GatewayNotFound, HandshakeError, HTTPError) as exc:
-        logger.error("Can not connect (%s), restarting.", str(exc))
-        dtime = int(time())
-        try:
-            from modules.dbm_restart import modrestart
-            emerg_path = os.path.join(dbot.config.get("main.dir"), "emerg_restart")
-            if os.path.exists(emerg_path):
-                with open(emerg_path, 'r') as f:
-                    linedate = f.readline()
-                    print linedate
-                    if len(linedate) > 0:
-                        linedate = int(linedate)
-                        if dtime < linedate + 300:
-                            logger.error("Wait 5 minute to restart")
-                            sleep(300)
-            with open(emerg_path, 'w') as f:
-                dtime = str(int(time()))
-                f.write(dtime)
-            modrestart(dbot)
-        except ImportError as exc:
-            logger.error("No module restart, exiting.")
-            exit()
+        botrestart(dbot.config, exc)
     except Exception, exc:
         logger.error("Bot stop working: %s: %s" % (exc.__class__.__name__, exc))
-        exit()
+        sys.exit()
 
 
 def main(notrealy=False):
@@ -313,6 +317,9 @@ def main(notrealy=False):
         sys.exit(0)
     try:
         bot = Bot()
+    except (ConnectionError, discord.GatewayNotFound, HandshakeError, HTTPError) as exc:
+        bconfig = config.Config()
+        botrestart(bconfig, exc)
     except Exception, exc:
         logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
         exit()
