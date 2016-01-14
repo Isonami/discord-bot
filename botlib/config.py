@@ -48,7 +48,7 @@ class Config(object):
                 logger.error("Can not load json config file: %s", str(e))
 
         def split_path(config_var, strpath):
-            for key, value in config_var.iteritems():
+            for key, value in config_var.items():
                 if strpath:
                     new_strpath = ".".join([strpath, key])
                 else:
@@ -64,16 +64,16 @@ class Config(object):
         self.set("version", VERSION)
 
     def set(self, var, value):
-        var = unicode(var)
+        var = str(var)
         return self.__getset("set", var.lower(), value)
 
     def get(self, var, value=None):
-        var = unicode(var)
+        var = str(var)
         return self.__getset("get", var.lower(), value)
 
     @staticmethod
     def __getset(action_type, var, value):
-        if not var or type(var) is not unicode or len(var) < 1:
+        if not var or type(var) is not str or len(var) < 1:
             logger.error("Can not %s config varible, argument must be a string with length > 1", action_type)
             return
         var_path = var.split(".")

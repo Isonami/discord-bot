@@ -10,15 +10,15 @@ import signal
 import sys
 import types
 import discord
+from discord import endpoints
 import tornado.httpclient as httpclient
-import discord.endpoints as endpoints
-import modules
-import updates
-import pyfibot
-from pyfibot.pbot import NAME as PBOTNAME
-from botlib import config, sql, scheduler, http, web, unflip
-from requests.packages.urllib3.connection import ConnectionError
-from ws4py.exc import HandshakeError
+# import modules
+# import updates
+import asyncio
+# from botlib import config, sql, scheduler, http, web, unflip
+from botlib import config, unflip
+import aiohttp
+
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
@@ -62,21 +62,20 @@ ifnfo_line = """Nedo bot version %s
 by Isonami (github.com/Isonami/discord-bot)"""
 cmd_start = "."
 status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
+restart_wait_time = 300
 
 
 def sigterm_handler(_signo, _stack_frame):
     try:
-        if "webth" in globals():
-            webth.terminate()
         if "bot" in globals() and not bot.disconnect:
             logger.info("Stopping...")
             bot.disconnect = True
-            bot.logout()
+            loop.run_until_complete(bot.logout())
             sys.exit(0)
         if "bot" in globals() and bot.disconnect:
             return
         sys.exit(0)
-    except Exception, exc:
+    except Exception as exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
         return None, None
 
@@ -103,28 +102,28 @@ def server_status(client):
 
 
 class Bot(object):
-    def __init__(self, notrealy=False):
+    def __init__(self, main_loop, notrealy=False):
+        self.loop = main_loop
         self.config = config.Config()
         self.admins = self.config.get("discord.admins", [])
+        self._next_restart = 0
         self.on_ready = []
         self.disconnect = False
-        self.http_client = http_client
-        self.http = http.init(self)
-        if not self.http:
-            raise EnvironmentError("Can not start without http lib.")
-        self.scheduler = scheduler.Scheduler()
-        self.sqlcon = sql.init(self)
-        updates.init(self)
-        commands = modules.init(self)
+        # self.http = http.init(self)
+        # if not self.http:
+        #    raise EnvironmentError("Can not start without http lib.")
+        # self.scheduler = scheduler.Scheduler()
+        # self.sqlcon = sql.init(self)
+        # updates.init(self)
+        # commands = modules.init(self)
         self.login = self.config.get("discord.login")
         self.password = self.config.get("discord.password")
         self.unflip = self.config.get("discord.unflip", False)
         if not notrealy:
-            self.client = discord.Client()
-            self.client.login(self.login, self.password)
+            self.client = discord.Client(loop=self.loop)
             self.cmds = {}
             self.ifnfo_line = ifnfo_line % self.config.get("version")
-        pcommands = pyfibot.init(self)
+        return
         if notrealy:
             return
         all_reg = r""
@@ -136,14 +135,6 @@ class Bot(object):
                 reg = self.config.get(".".join([mod_name, "regex"]), reg)
                 all_reg += r"(?P<%s>^%s$)|" % (mod_name, reg)
                 self.cmds[mod_name] = {"CMD": cmd, "Description": desk, "Admin": admin, "Private": private}
-        for reg, cmd, cmd_name, mod_name, desk in pcommands:
-            if desk:
-                desk = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "description"]), desk)
-                if desk:
-                    desk = desk.format(cmd_start=cmd_start)
-            reg = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "regex"]), reg)
-            all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
-            self.cmds[cmd_name] = {"CMD": cmd, "Description": desk, "Admin": False, "Private": False}
         logger.debug("Regex: %s", all_reg[:-1])
         self.reg = re.compile(all_reg[:-1], re.IGNORECASE)
         self.scheduler.start()
@@ -166,35 +157,42 @@ class Bot(object):
                     readyth = Thread(name="readyth_" + function.__name__, target=function, args=(self,))
                     readyth.daemon = True
                     readyth.start()
-                except Exception, exc:
+                except Exception as exc:
                     logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
-        @self.client.event
-        def on_disconnect():
-            pass
-            # if not self.disconnect:
-            #    logger.debug('Reconnecting')
-            #    self.reconnect()
+    async def restart_wait(self):
+        cur_time = int(time())
+        if cur_time > self._next_restart:
+            self._next_restart = cur_time + restart_wait_time
+        else:
+            await asyncio.sleep(self._next_restart - cur_time)
+            self._next_restart = cur_time + restart_wait_time
 
-    def reconnect(self):
-        self.client.logout()
+    async def run(self):
+        # await self.client.login(self.login, self.password)
         while not self.disconnect:
+            print("join")
             try:
-                if server_status(self.http_client):
-                    logger.info('Reconnect attempt...')
-                    self.client.login(self.login, self.password)
-                    if self.client.is_logged_in:
-                        return
-                    sleep(20)
-                else:
-                    sleep(300)
-            except Exception, exc:
-                logger.error("%s: %s" % (exc.__class__.__name__, exc))
-                sleep(60)
+                await self.client.connect()
+            except (discord.ClientException, discord.GatewayNotFound) as exc:
+                logger.error("Bot stop working: %s: %s", exc.__class__.__name__, exc)
+                if self.disconnect:
+                    break
+                if isinstance(exc, discord.GatewayNotFound):
+                    resp = await aiohttp.get(endpoints.GATEWAY, headers=self.client.headers, loop=self.loop)
+                    if resp.status == 401:
+                        logger.error("Got 401 UNAUTHORIZED, relogin...")
+                        await self.restart_wait()
+                        if self.client.ws:
+                            await self.client.logout()
+                        await self.client.login(self.login, self.password)
+                        continue
+                await self.restart_wait()
+            except Exception as exc:
+                logger.error("Bot stopping: %s: %s", exc.__class__.__name__, exc)
+                await self.client.logout()
 
     def send(self, channel, message, **kwargs):
-        if type(message) is unicode:
-            message = message.encode('utf-8')
         self.client.send_message(channel, message, **kwargs)
 
     def msg_proc(self, message):
@@ -207,7 +205,7 @@ class Bot(object):
                     kwargs = {}
                     command = None
                     mod_name = None
-                    for item, value in rkwargs.iteritems():
+                    for item, value in rkwargs.items():
                         if value:
                             if item in self.cmds:
                                 command = self.cmds[item]["CMD"]
@@ -223,71 +221,22 @@ class Bot(object):
                         command(self, message, *args, **kwargs)
             elif self.unflip and message.content.startswith(unflip.flip_str):
                 unflip.unflip(self, message.channel)
-        except Exception, exc:
+        except Exception as exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
 
     def typing(self, channel):
         self.client.send_typing(channel)
-        """
-        if channel:
-            if hasattr(channel, 'id'):
-                url = "{0}/{1}/typing".format(endpoints.CHANNELS, channel.id)
-                logger.debug("Send 'typing' status to server")
-                state, resp = self.http(url, method="POST", headers=self.client.headers)
-                if state == 0:
-                    return True
-        """
         return False
 
-    def logout(self):
+    async def logout(self):
         try:
             logger.debug("Logout from server")
-            self.http_client.fetch(endpoints.LOGOUT, method="POST", headers=self.client.headers, body="",
-                                   request_timeout=5, connect_timeout=5)
-        except httpclient.HTTPError as e:
-            logger.error("HTTPError: " + str(e))
-        except Exception, exc:
+            await self.client.logout()
+        except Exception as exc:
             logger.error("%s: %s" % (exc.__class__.__name__, exc))
-        self.client._close = True
-        self.client.ws.close()
-        self.client._is_logged_in = False
 
     def is_admin(self, user):
         return user.id in self.admins
-
-
-def botrestart(bconfig, exc):
-    logger.error("Can not connect (%s), restarting.", str(exc))
-    dtime = int(time())
-    try:
-        from modules.dbm_restart import modrestart
-        emerg_path = os.path.join(bconfig.get("main.dir"), "emerg_restart")
-        if os.path.exists(emerg_path):
-            with open(emerg_path, 'r') as f:
-                linedate = f.readline()
-                print linedate
-                if len(linedate) > 0:
-                    linedate = int(linedate)
-                    if dtime < linedate + 300:
-                        logger.error("Wait 5 minute to restart")
-                        sleep(300)
-        with open(emerg_path, 'w') as f:
-            dtime = str(int(time()))
-            f.write(dtime)
-        modrestart(bconfig)
-    except ImportError as exc:
-        logger.error("No module restart, exiting.")
-        sys.exit()
-
-
-def botrun(dbot):
-    try:
-        dbot.client.run()
-    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException) as exc:
-        botrestart(dbot.config, exc)
-    except Exception, exc:
-        logger.error("Bot stop working: %s: %s" % (exc.__class__.__name__, exc))
-        sys.exit()
 
 
 def main(notrealy=False):
@@ -308,30 +257,22 @@ def main(notrealy=False):
     logging.config.dictConfig(LOGGING)
     global logger
     logger = logging.getLogger(__name__)
-    global http_client
-    http_client = httpclient.HTTPClient()
+    global loop
+    loop = asyncio.get_event_loop()
     global bot
     if notrealy:
-        bot = Bot(notrealy=True)
+        bot = Bot(loop, notrealy=True)
         sys.exit(0)
     try:
-        bot = Bot()
-    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException) as exc:
-        bconfig = config.Config()
-        botrestart(bconfig, exc)
-    except Exception, exc:
+        bot = Bot(loop)
+    except Exception as exc:
         logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
-        exit()
-    th = Thread(name="Bot", target=botrun, args=(bot,))
-    th.daemon = True
-    th.start()
+        sys.exit(0)
     if bot.config.get("web.enable"):
-        global webth
-        webth = web.WebProxyThread(name="WebProxy", target=web.start_web, args=(bot,))
-        webth.daemon = True
-        webth.start()
-    while not bot.disconnect:
-        sleep(1)
+        # web.start_web(bot)
+        pass
+    loop.run_until_complete(bot.run())
+    loop.close()
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigterm_handler)
