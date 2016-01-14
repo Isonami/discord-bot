@@ -2,7 +2,7 @@
 import logging
 import logging.config
 import json
-from time import sleep, time
+from time import time
 import os
 import re
 from threading import Thread
@@ -16,8 +16,8 @@ import tornado.httpclient as httpclient
 # import updates
 import asyncio
 # from botlib import config, sql, scheduler, http, web, unflip
-from botlib import config, unflip
-import aiohttp
+from botlib import config, http, web, unflip
+from tornado.platform.asyncio import AsyncIOMainLoop
 
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
@@ -104,14 +104,19 @@ def server_status(client):
 class Bot(object):
     def __init__(self, main_loop, notrealy=False):
         self.loop = main_loop
+        ioloop = AsyncIOMainLoop()
+        ioloop.asyncio_loop = self.loop
+        ioloop.install()
+        self.tornado_loop = ioloop
         self.config = config.Config()
         self.admins = self.config.get("discord.admins", [])
         self._next_restart = 0
         self.on_ready = []
         self.disconnect = False
-        # self.http = http.init(self)
-        # if not self.http:
-        #    raise EnvironmentError("Can not start without http lib.")
+        self.tasks = []
+        self.http = http.init(self)
+        if not self.http:
+            raise EnvironmentError("Can not start without http lib.")
         # self.scheduler = scheduler.Scheduler()
         # self.sqlcon = sql.init(self)
         # updates.init(self)
@@ -169,7 +174,7 @@ class Bot(object):
             self._next_restart = cur_time + restart_wait_time
 
     async def run(self):
-        # await self.client.login(self.login, self.password)
+        await self.client.login(self.login, self.password)
         while not self.disconnect:
             print("join")
             try:
@@ -179,8 +184,8 @@ class Bot(object):
                 if self.disconnect:
                     break
                 if isinstance(exc, discord.GatewayNotFound):
-                    resp = await aiohttp.get(endpoints.GATEWAY, headers=self.client.headers, loop=self.loop)
-                    if resp.status == 401:
+                    code, resp = await self.http(endpoints.GATEWAY, headers=self.client.headers)
+                    if code == 1 and resp.code == 401:
                         logger.error("Got 401 UNAUTHORIZED, relogin...")
                         await self.restart_wait()
                         if self.client.ws:
@@ -228,6 +233,9 @@ class Bot(object):
         self.client.send_typing(channel)
         return False
 
+    def async_function(self, future):
+        self.tasks.append(asyncio.ensure_future(future))
+
     async def logout(self):
         try:
             logger.debug("Logout from server")
@@ -269,9 +277,9 @@ def main(notrealy=False):
         logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
         sys.exit(0)
     if bot.config.get("web.enable"):
-        # web.start_web(bot)
-        pass
+        web.start_web(bot)
     loop.run_until_complete(bot.run())
+    print("here")
     loop.close()
 
 if __name__ == "__main__":
