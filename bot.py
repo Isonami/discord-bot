@@ -283,7 +283,7 @@ def botrestart(bconfig, exc):
 def botrun(dbot):
     try:
         dbot.client.run()
-    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException) as exc:
+    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException, TypeError) as exc:
         botrestart(dbot.config, exc)
     except Exception, exc:
         logger.error("Bot stop working: %s: %s" % (exc.__class__.__name__, exc))
@@ -316,7 +316,7 @@ def main(notrealy=False):
         sys.exit(0)
     try:
         bot = Bot()
-    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException) as exc:
+    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException, TypeError) as exc:
         bconfig = config.Config()
         botrestart(bconfig, exc)
     except Exception, exc:
