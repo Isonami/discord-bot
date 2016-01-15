@@ -95,10 +95,6 @@ def start_web(bot):
 
 def main(bot):
     try:
-        ioloop = IOLoop.current()
-        # ioloop = AsyncIOMainLoop()
-        # ioloop.asyncio_loop = bot.loop
-        # ioloop.install()
         app = tornado.web.Application(
             [
                 (r"/stats", MainHandler, {'bot': bot}),
@@ -106,7 +102,8 @@ def main(bot):
             xsrf_cookies=False,
             debug=debug,
             )
-        app.listen(bot.config.get("web.port", port), address=bot.config.get("web.address", address), io_loop=ioloop)
+        app.listen(bot.config.get("web.port", port), address=bot.config.get("web.address", address),
+                   io_loop=bot.tornado_loop)
         logger.debug("Http server started.")
     except Exception as exc:
         logger.error("%s: %s", exc.__class__.__name__, exc)

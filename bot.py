@@ -15,8 +15,7 @@ import tornado.httpclient as httpclient
 # import modules
 # import updates
 import asyncio
-# from botlib import config, sql, scheduler, http, web, unflip
-from botlib import config, http, web, unflip
+from botlib import config, sql, scheduler, http, web, unflip
 from tornado.platform.asyncio import AsyncIOMainLoop
 
 
@@ -117,8 +116,8 @@ class Bot(object):
         self.http = http.init(self)
         if not self.http:
             raise EnvironmentError("Can not start without http lib.")
-        # self.scheduler = scheduler.Scheduler()
-        # self.sqlcon = sql.init(self)
+        self.scheduler = scheduler.Scheduler(bot)
+        self.sqlcon = sql.init(self)
         # updates.init(self)
         # commands = modules.init(self)
         self.login = self.config.get("discord.login")
