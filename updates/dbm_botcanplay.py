@@ -74,7 +74,7 @@ def botplayth(bot):
         sleep(play_delay)
 
 
-def bot_can_play_th(bot):
+def ready(bot):
     if not bot_play_th_started:
         bot_play_th = threading.Thread(name="BotPlay", target=botplayth, args=(bot,))
         bot_play_th.daemon = True
@@ -82,8 +82,8 @@ def bot_can_play_th(bot):
 
 
 def init(bot):
+    raise ValueError("")
     global play_delay
     play_delay = bot.config.get("botcanplay.delay", play_delay)
     global play_chance
     play_chance = bot.config.get("botcanplay.chance", play_chance)
-    bot.on_ready.append(bot_can_play_th)

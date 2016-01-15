@@ -11,17 +11,20 @@ open_dbs = {}
 
 sql_timeout = 30
 
+driver = "SQLite3"
+
 
 class Result(object):
-    _result = None
-    _sql = None
-    _args = None
-    _sql_type = None
-    _con = None
-    _cur = None
-    _timeout = True
+    __slots__ = ['_result', '_sql', '_args', '_sql_type', '_con', '_cur', '_timeout', '_event']
 
     def __init__(self):
+        self._result = None
+        self._sql = None
+        self._args = None
+        self._sql_type = None
+        self._con = None
+        self._cur = None
+        self._timeout = True
         self._event = asyncio.Event()
 
     @property
@@ -82,11 +85,13 @@ class Result(object):
 
 
 class SQLCon(object):
+    __slots__ = ['_result', 'dsn', 'init_script']
+
     def __init__(self, init_script, db_name):
         self._result = Result()
         logger.debug("Init DB connection: %s", db_name)
         db_path = path.join(sdir, "db", db_name)
-        self.dsn = 'Driver=SQLite;Database={}'.format(db_path)
+        self.dsn = 'Driver={};Database={}'.format(driver, db_path)
         self.init_script = init_script
 
     async def connection(self):
@@ -133,7 +138,7 @@ async def sql_db(loop):
                         await item.con.commit()
                         item.result = True
             except Exception as exc:
-                logger.error("%s: %s" % (exc.__class__.__name__, exc))
+                logger.exception("%s: %s" % (exc.__class__.__name__, exc))
                 item.result = None
 
 
@@ -147,8 +152,10 @@ async def sqlcon(sql_init, db_name):
     return con
 
 
-def init(bot, loop):
+def init(bot):
     global sdir
     sdir = bot.config.get("main.dir")
-    bot.async_function(sql_db(loop))
+    global driver
+    driver = bot.config.get("sql.driver", driver)
+    bot.async_function(sql_db(bot.loop))
     return sqlcon

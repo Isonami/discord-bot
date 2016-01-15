@@ -3,7 +3,8 @@ import asyncio
 import uuid
 import logging
 import types
-from random import random
+from random import randint
+import functools
 
 logger = logging.getLogger(__name__)
 stardelay = (5, 30)
@@ -22,21 +23,31 @@ class Job(object):
         self._handler = None
         self.stardelay = stdelay
 
+    def __str__(self):
+        return self.name
+
     def start(self):
         self._runned = True
-        self._handler = self.loop.call_at(random(*self.stardelay), self._wrapper)
+        self._handler = self.loop.call_later(randint(*self.stardelay), self._wrapper)
 
-    async def _wrapper(self):
+    def _wrapper(self):
         if self._runned:
-            self._handler = self.loop.call_at(self.delay, self._wrapper)
-            cuuid = str(uuid.uuid4())
-            logger.debug('Start Job: %s UUID(%s)', self.name, cuuid)
-            try:
-                await self.target(*self.args, cuuid=cuuid)
-            except Exception as exc:
-                logger.error("Job [%s] %s: %s", cuuid, exc.__class__.__name__, exc)
-            finally:
-                logger.debug('End Job: %s UUID(%s)', self.name, cuuid)
+            self._handler = self.loop.call_later(self.delay, self._wrapper)
+            self._call()
+
+    def _result(self, cuuid, result):
+        result = result.result()[0]
+        if isinstance(result, Exception):
+            logger.exception("Job [%s] %s: %s", cuuid, result.__class__.__name__, result)
+        logger.debug('End Job: %s UUID(%s)', str(self), cuuid)
+
+    def _call(self):
+        cuuid = str(uuid.uuid4())
+        logger.debug('Start Job: %s UUID(%s)', str(self), cuuid)
+        asyncio.gather(
+            self.target(cuuid, *self.args),
+            loop=self.loop, return_exceptions=True
+            ).add_done_callback(functools.partial(self._result, cuuid))
 
     def destroy(self):
         self._runned = False

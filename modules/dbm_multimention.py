@@ -19,9 +19,9 @@ msg_fmt = "{name} mention: {lst}"
 logger = logging.getLogger(__name__)
 
 
-def init(bot):
+async def init(bot):
     global sqlcon
-    sqlcon = bot.sqlcon(sql_init, db_name)
+    sqlcon = await bot.sqlcon(sql_init, db_name)
 
 
 def add_or_update_mention_list(name, lst):
