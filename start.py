@@ -35,7 +35,7 @@ class MyDaemon(Daemon):
             for signame in ('SIGINT', 'SIGTERM'):
                 loop.add_signal_handler(getattr(signal, signame),
                                         functools.partial(bot.sigterm_handler, signame))
-        loop.call_later(5, self.flush_err, self)
+        loop.call_later(3, self.flush_err)
         loop.run_until_complete(bot.main(loop))
         loop.close()
 
@@ -51,7 +51,9 @@ if __name__ == '__main__':
         elif 'restart' == sys.argv[1]:
             daemon.restart()
         elif 'check' == sys.argv[1]:
-            bot.main(notrealy=True)
+            cloop = asyncio.get_event_loop()
+            cloop.run_until_complete(bot.main(cloop, notrealy=True))
+            cloop.close()
         else:
             print('Unknown command')
             sys.exit(2)
