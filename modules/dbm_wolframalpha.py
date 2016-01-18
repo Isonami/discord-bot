@@ -126,7 +126,7 @@ async def getimage(http, src):
     logger.debug('Get img')
     if not walpha_static_url:
         return src
-    response = await http(src, method='GET', raw=True)
+    response = await http(src, method='GET')
     if response.code == 0:
         if not response.raw_response:
             return src
