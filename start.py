@@ -26,10 +26,6 @@ def check_packages():
         sys.exit(1)
 
 
-async def flush_err(self):
-    self.flush_err()
-
-
 class MyDaemon(Daemon):
     def run(self):
         loop = asyncio.get_event_loop()
@@ -39,7 +35,7 @@ class MyDaemon(Daemon):
             for signame in ('SIGINT', 'SIGTERM'):
                 loop.add_signal_handler(getattr(signal, signame),
                                         functools.partial(bot.sigterm_handler, signame))
-        loop.call_later(5, flush_err, self)
+        loop.call_later(5, self.flush_err, self)
         loop.run_until_complete(bot.main(loop))
         loop.close()
 
