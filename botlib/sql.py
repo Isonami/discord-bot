@@ -10,7 +10,7 @@ open_dbs = {}
 
 sql_timeout = 30
 
-driver = "SQLite3"
+driver = "SQLite"
 
 
 class Result(object):

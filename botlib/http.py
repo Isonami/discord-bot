@@ -39,7 +39,7 @@ class Result(object):
 
 
 class Response(object):
-    __slots__ = ['_response', 'code', 'http_code', 'encoding', 'body']
+    __slots__ = ['_response', 'code', 'http_code', 'encoding', 'body', 'headers']
 
     def __init__(self, code, response, encoding):
         self.code = code
@@ -50,6 +50,7 @@ class Response(object):
             self.http_code = self._response.code
             self.encoding = encoding
             self.body = response.body
+            self.headers = response.headers
 
     def __str__(self):
         return self.body.decode(self.encoding)

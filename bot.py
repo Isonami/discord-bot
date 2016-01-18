@@ -15,6 +15,7 @@ import updates
 import asyncio
 from botlib import config, sql, scheduler, http, web, unflip
 from tornado.platform.asyncio import AsyncIOMainLoop
+import functools
 
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
@@ -62,7 +63,7 @@ status_url = 'https://srhpyqt94yxb.statuspage.io/api/v2/summary.json'
 restart_wait_time = 300
 
 
-def sigterm_handler(_signo, _stack_frame):
+def sigterm_handler(signame):
     logger.error('Get signal: %s', signame)
     try:
         if 'bot' in globals() and not bot.disconnect:
@@ -276,6 +277,10 @@ def main(notrealy=False):
     global loop
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    if sys.platform != 'win32':
+        for signame in ('SIGINT', 'SIGTERM'):
+            loop.add_signal_handler(getattr(signal, signame),
+                                    functools.partial(sigterm_handler, signame))
     global bot
     if notrealy:
         bot = Bot(loop, notrealy=True)
@@ -291,6 +296,4 @@ def main(notrealy=False):
     loop.close()
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, sigterm_handler)
-    signal.signal(signal.SIGTERM, sigterm_handler)
     main()
