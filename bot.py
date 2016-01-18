@@ -69,7 +69,9 @@ def sigterm_handler(*args):
         if 'bot' in globals() and not bot.disconnect:
             logger.info('Stopping...')
             bot.disconnect = True
-            loop.run_until_complete(bot.logout())
+            cloop = asyncio.new_event_loop()
+            cloop.run_until_complete(bot.logout())
+            cloop.close()
             sys.exit(0)
         if 'bot' in globals() and bot.disconnect:
             return
