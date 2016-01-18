@@ -16,6 +16,7 @@ class Update(object):
         self.ready = getattr(obj, 'ready', None)
         self.name = name
         self.description = getattr(obj, 'description', None)
+        self.valid = False
         if isinstance(self.ready, types.FunctionType):
             self.valid = True
 
@@ -48,6 +49,9 @@ async def init(bot):
                     except Exception as exc:
                         logger.error("Can not init module %s", name)
                         logger.exception("%s: %s", exc.__class__.__name__, exc)
+                upd = Update(obj, name)
+                if upd.valid:
+                    updates.append(upd)
     except Exception as exc:
         logger.exception("%s: %s", exc.__class__.__name__, exc)
         raise

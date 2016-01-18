@@ -174,8 +174,8 @@ class Bot(object):
         async def on_ready():
             logger.debug('Logged in as %s (%s)', self.client.user.name, self.client.user.id)
             waiters = []
-            for function in self.modules.updates:
-                waiters.append(function(self))
+            for upd in self.modules.updates:
+                waiters.append(upd.ready(self))
             for one_wait in waiters:
                 await one_wait
 

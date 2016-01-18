@@ -13,13 +13,13 @@ perm_th_started = False
 
 async def update_all_permisions(bot, server, db, localdb):
     all_roles = []
-    for cid, channel_perm in db.iteritems():
+    for cid, channel_perm in db.items():
         all_roles.append(channel_perm['role'])
     for member in server.members:
         for role in all_roles:
             if role in member.roles:
                 await delete_perm(bot, member, role)
-    for cid, channel_perm in db.iteritems():
+    for cid, channel_perm in db.items():
         for member in channel_perm['voice'].voice_members:
             localdb[member.id] = channel_perm['voice'].id
             await add_perm(bot, member, channel_perm['role'])

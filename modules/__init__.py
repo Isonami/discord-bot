@@ -19,6 +19,7 @@ class Command(object):
         self.description = getattr(obj, 'description', None)
         self.admin = getattr(obj, 'admin', False)
         self.private = getattr(obj, 'private', False)
+        self.valid = False
         if isinstance(self.command, str) and isinstance(self.main, types.FunctionType):
             self.valid = True
 

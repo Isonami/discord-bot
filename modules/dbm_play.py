@@ -14,7 +14,7 @@ dmax = 3600
 
 
 async def wait(bot, twait):
-    asyncio.sleep(twait - time())
+    await asyncio.sleep(twait - time())
     if bot.config.get('botcanplay.play_game') and bot.config.get('botcanplay.play_game') == twait:
         logger.debug('End game')
         await bot.client.change_status()

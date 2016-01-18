@@ -11,14 +11,14 @@ url_base = endpoints.BASE + '/{url}'
 init_url = url_base.format(url='channels/@me')
 games = {'list': None, 'id': 0}
 play_delay = 420
-play_chance = 10
+play_chance = 1
 bot_play_th_started = False
 
 
 async def get_game_list(bot):
     response = await bot.http(init_url, method='GET')
     if response.code == 0:
-        r = re.compile('<script src=\'([a-z0-9\./]+)\'></script>')
+        r = re.compile('<script src=\"([a-z0-9\./]+)\"></script>')
         m = r.findall(str(response))
         if len(m) > 0:
             response = await bot.http(url_base.format(url=m[-1]), method='GET')
