@@ -66,6 +66,8 @@ restart_wait_time = 300
 def sigterm_handler(*args):
     try:
         if 'endfuture' in globals():
+            if loop.is_closed():
+                sys.exit(0)
             if globals()['endfuture'].done():
                 sys.exit(0)
             else:
@@ -192,9 +194,9 @@ class Bot(object):
             try:
                 await self.client.connect()
             except (discord.ClientException, discord.GatewayNotFound) as exc:
-                logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
                 if self.disconnect:
                     break
+                logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
                 if isinstance(exc, discord.GatewayNotFound):
                     resp = await self.http(endpoints.GATEWAY, headers=self.client.headers)
                     if resp.code == 1 and resp.http_code == 401:
@@ -284,7 +286,6 @@ async def main(cloop, notrealy=False):
     logging.config.dictConfig(LOGGING)
     global logger
     logger = logging.getLogger(__name__)
-    # we may use subrocess in modules
     global loop
     loop = cloop
     global bot

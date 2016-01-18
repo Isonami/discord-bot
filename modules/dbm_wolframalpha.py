@@ -204,8 +204,8 @@ async def main(self, message, *args, **kwargs):
                     continue
                 text = ''
                 if len(text_node.childNodes) > 0:
-                    text = text_node.childNodes[0].data.encode('utf-8')
-                    text = unire.sub(lambda match: '{0}'.format(chr(int(match.group(1), 16)).encode('utf-8')),
+                    text = text_node.childNodes[0].data
+                    text = unire.sub(lambda match: '{0}'.format(chr(int(match.group(1), 16))),
                                      text)
                 if len(img_node) > 0:
                     img_src = img_node[0].getAttribute('src')
