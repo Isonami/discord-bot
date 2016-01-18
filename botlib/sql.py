@@ -153,6 +153,13 @@ async def sqlcon(sql_init, db_name):
     return con
 
 
+async def close():
+    for db_name in open_dbs:
+        con = open_dbs[db_name]
+        await con.cur.close()
+        await con.con.close()
+
+
 def init(bot):
     global sdir
     sdir = bot.config.get("main.dir")

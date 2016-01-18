@@ -249,12 +249,17 @@ class Bot(object):
     def async_function(self, future):
         self.tasks.append(asyncio.ensure_future(future, loop=self.loop))
 
+    @staticmethod
+    async def close():
+        await sql.close()
+
     async def logout(self):
         try:
             logger.debug('Logout from server')
             await self.client.logout()
         except Exception as exc:
             logger.error('%s: %s', exc.__class__.__name__, exc)
+        await self.close()
 
     def is_admin(self, user):
         return user.id in self.admins
@@ -285,6 +290,7 @@ async def main(cloop, notrealy=False):
     if notrealy:
         bot = Bot(loop, notrealy=True)
         await bot.modules.imp()
+        await bot.close()
         sys.exit(0)
     try:
         bot = Bot(loop)
