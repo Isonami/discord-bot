@@ -117,6 +117,10 @@ class SQLCon(object):
         self._result.clear()
         return res
 
+    async def close(self):
+        await self._result.cur.close()
+        await self._result.con.close()
+
 
 async def sql_db(bot):
     loop = bot.loop
@@ -156,9 +160,7 @@ async def sqlcon(sql_init, db_name):
 async def close():
     for db_name in open_dbs:
         con = open_dbs[db_name]
-        print(db_name)
-        await con.cur.close()
-        await con.con.close()
+        await con.close()
 
 
 def init(bot):
