@@ -11,14 +11,15 @@ stardelay = (5, 30)
 
 
 class Job(object):
-    __slots__ = ['name', 'target', 'delay', 'args', 'loop', '_runned', '_handler', 'stardelay']
+    __slots__ = ['name', 'paused', 'target', 'delay', 'args', 'loop', '_runned', '_handler', 'stardelay']
 
-    def __init__(self, loop, target, name, delay, stdelay, args):
+    def __init__(self, bot, target, name, delay, stdelay, args):
         self.name = name
         self.target = target
         self.delay = delay
         self.args = args
-        self.loop = loop
+        self.loop = bot.loop
+        self.paused = bot.notrealy
         self._runned = False
         self._handler = None
         self.stardelay = stdelay
@@ -27,6 +28,8 @@ class Job(object):
         return self.name
 
     def start(self):
+        if self.paused:
+            return
         self._runned = True
         self._handler = self.loop.call_later(randint(*self.stardelay), self._wrapper)
 
@@ -69,7 +72,7 @@ class Scheduler(object):
 
     def new(self, job, name, delay, *args):
         if isinstance(job, types.FunctionType) and isinstance(delay, int):
-            job = Job(self.bot.loop, job, name, delay, self.stardelay, args)
+            job = Job(self.bot, job, name, delay, self.stardelay, args)
             self.jobs.append(job)
             return job
         else:

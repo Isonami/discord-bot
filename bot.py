@@ -137,6 +137,7 @@ class Bot(object):
         ioloop = AsyncIOMainLoop()
         ioloop.asyncio_loop = self.loop
         ioloop.install()
+        self.notrealy = notrealy
         self.tornado_loop = ioloop
         self.config = config.Config()
         self.admins = self.config.get('discord.admins', [])
@@ -152,7 +153,7 @@ class Bot(object):
         self.login = self.config.get('discord.login')
         self.password = self.config.get('discord.password')
         self.unflip = self.config.get('discord.unflip', False)
-        if notrealy:
+        if self.notrealy:
             return
         self.client = discord.Client(loop=self.loop)
         self.ifnfo_line = ifnfo_line % self.config.get('version')
