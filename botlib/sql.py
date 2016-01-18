@@ -119,8 +119,9 @@ class SQLCon(object):
         return res
 
 
-async def sql_db(loop):
-    while loop.is_running():
+async def sql_db(bot):
+    loop = bot.loop
+    while not bot.disconnect:
         item = await insql.get()
         if isinstance(item, Result):
             try:
@@ -158,5 +159,5 @@ def init(bot):
     sdir = bot.config.get("main.dir")
     global driver
     driver = bot.config.get("sql.driver", driver)
-    bot.async_function(sql_db(bot.loop))
+    bot.async_function(sql_db(bot))
     return sqlcon
