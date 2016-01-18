@@ -21,7 +21,6 @@ def check_packages():
         out = pip.main(['-q', 'show', package])
         if out == 1:
             not_found.append(package)
-    print(not_found)
     if len(not_found) > 0:
         print('Please install this packages: {}'.format(', '.join(not_found)))
         sys.exit(1)
