@@ -52,11 +52,12 @@ async def getrates(cuuid, http):
         rvars = json.loads(str(response))
         if rvars:
             if "rates" in rvars:
-                logger.debug("Rates updated")
+                logger.debug("[%s] Rates updated", cuuid)
                 rates["rates"][1] = rates["rates"][0]
                 rates["rates"][0] = rvars["rates"]
                 if "ETag" in response.headers and "Date" in response.headers:
-                    logger.debug("Got ETag: %s, Date: %s", response.headers["ETag"], response.headers["Date"])
+                    logger.debug("[%s] Got ETag: %s, Date: %s", cuuid,response.headers["ETag"],
+                                 response.headers["Date"])
                     rates["etag"] = response.headers["ETag"]
                     rates["date"] = response.headers["Date"]
         else:
