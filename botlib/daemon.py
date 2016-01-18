@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys, os, time, atexit
 from signal import SIGTERM
+import pipes
+t = pipes.Template()
 
 
 class Daemon(object):
@@ -17,7 +19,7 @@ class Daemon(object):
 
     def flush_err(self):
         sys.stderr.flush()
-        se = open(self.stderr, 'a+', 0)
+        se = t.open(self.stderr, 'a+')
         os.dup2(se.fileno(), sys.stderr.fileno())
 
     def daemonize(self):
@@ -53,8 +55,8 @@ class Daemon(object):
         # redirect standard file descriptors
         sys.stdout.flush()
         # sys.stderr.flush()
-        si = open(self.stdin, 'r')
-        so = open(self.stdout, 'a+')
+        si = t.open(self.stdin, 'r')
+        so = t.open(self.stdout, 'a+')
         # se = file(self.stderr, 'a+', 0)
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())

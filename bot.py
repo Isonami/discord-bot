@@ -15,7 +15,6 @@ import updates
 import asyncio
 from botlib import config, sql, scheduler, http, web, unflip
 from tornado.platform.asyncio import AsyncIOMainLoop
-import functools
 
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
