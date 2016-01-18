@@ -128,7 +128,7 @@ async def getimage(http, src):
         return src
     response = await http(src, method='GET')
     if response.code == 0:
-        if not response.raw_response:
+        if not response.body:
             return src
         m = imgre.match(src)
         if not m:
@@ -139,7 +139,7 @@ async def getimage(http, src):
             mkdir(file_dir, 0o750)
         f = await aiofiles.open(path.join(file_dir, filename), 'wb')
         try:
-            await f.write(response.raw_response)
+            await f.write(response.body)
         finally:
             await f.close()
         return walpha_static_url.format(file=filename)
