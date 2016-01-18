@@ -64,15 +64,17 @@ restart_wait_time = 300
 
 
 def sigterm_handler(*args):
-    logger.error('Get signal: %s', args[0])
     try:
+        if 'endfuture' in globals():
+            if endfuture.done():
+                sys.exit(0)
+            else:
+                return
         if 'bot' in globals() and not bot.disconnect:
             logger.info('Stopping...')
             bot.disconnect = True
-            cloop = asyncio.new_event_loop()
-            cloop.run_until_complete(bot.logout())
-            cloop.close()
-            sys.exit(0)
+            global endfuture
+            endfuture = asyncio.ensure_future(bot.logout())
         if 'bot' in globals() and bot.disconnect:
             return
         sys.exit(0)
