@@ -70,8 +70,9 @@ class Result(object):
         self._sql = sql
         self._args = args
         await insql.put(self)
-        await asyncio.wait_for(self._event.wait(), timeout)
-        if self._timeout:
+        try:
+            await asyncio.wait_for(self._event.wait(), timeout)
+        except asyncio.futures.TimeoutError:
             logger.error("Timeout on SQL operation: %s", self.sql)
         return self.result
 

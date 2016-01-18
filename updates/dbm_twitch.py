@@ -2,7 +2,7 @@
 import logging
 import json
 from tornado.escape import url_escape
-import asyncio
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ async def init(bot):
         streams_url = ret_url
         global sqlcon
         sqlcon = await bot.sqlcon(sql_init, db_name)
+        global job
         job = bot.scheduler.new(update, 'Twitch', bot.config.get('twitch.dealy', dealy), bot)
         job.start()
         global headers
@@ -75,38 +76,37 @@ async def update(cuuid, bot):
             url = '/'.join([streams_url, url_escape(one_stream['Name'])])
             response = await bot.http(url, headers=headers)
             if response.code == 0:
-                logger.debug('Twitch response: %s', response.body)
+                logger.debug('[%s] Twitch response: %s', cuuid, str(response))
                 try:
                     ret_obj = json.loads(str(response))
                 except ValueError as e:
-                    logger.error('Can not parse json out: %s', e)
+                    logger.error('[%s] Can not parse json out: %s', cuuid, e)
                     continue
                 if 'error' in ret_obj:
-                    logger.error('Twitch API error: %s', ret_obj.get('message', ''))
+                    logger.error('[%s] Twitch API error: %s', cuuid, ret_obj.get('message', ''))
                     continue
                 stream = ret_obj.get('stream', None)
                 if stream and 'channel' in stream:
                     if one_stream['State'] != 0:
-                        logger.debug('Stream %s going ONLINE', one_stream['Name'])
+                        logger.debug('[%s] Stream %s going ONLINE', cuuid, one_stream['Name'])
                         try:
                             await sd_set_state(one_stream['Name'], 0)
-
                             msg = online_msg.format(url=stream['channel'].get("url", ""),
                                                     name=stream['channel'].get('name', ''),
                                                     title=stream['channel'].get('status', ''),
                                                     game=stream['channel'].get('game", '''))
                         except Exception as exc:
-                            logger.error('%s: %s', exc.__class__.__name__, exc)
+                            logger.error('[%s] %s: %s', cuuid, exc.__class__.__name__, exc)
                             return
                         for channel_id in one_stream['Channels']:
                             logger.debug(channel_id)
                             try:
                                 await bot.send(bot.client.get_channel(str(channel_id)), msg)
                             except Exception as exc:
-                                logger.error('%s: %s', exc.__class__.__name__, exc)
+                                logger.error('[%s] %s: %s', cuuid, exc.__class__.__name__, exc)
                 else:
                     if one_stream['State'] != 1:
-                        logger.debug('Stream %s going OFFLINE', one_stream['Name'])
+                        logger.debug('[%s] Stream %s going OFFLINE', cuuid, one_stream['Name'])
                         await sd_set_state(one_stream['Name'], 1)
 
 

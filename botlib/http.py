@@ -31,7 +31,10 @@ class Result(object):
 
     async def get(self, timeout=def_timeout):
         await htqueue.put(self)
-        await asyncio.wait_for(self._event.wait(), timeout)
+        try:
+            await asyncio.wait_for(self._event.wait(), timeout)
+        except asyncio.futures.TimeoutError:
+            return None
         return self.result
 
 
@@ -60,7 +63,7 @@ async def http_geter():
     while not bot_main.disconnect:
         req = await htqueue.get()
         if isinstance(req, Result):
-            logger.debug("New http request: %s", req.url)
+            logger.debug('New http request: %s', req.url)
             result = await to_asyncio_future(httpclient.fetch(req.url, raise_error=False, method=req.method,
                                                               headers=req.headers, **req.kwargs))
             req.result = result
@@ -77,33 +80,33 @@ def init(bot):
         bot.async_function(http_geter())
         return http
     except Exception as exc:
-        logger.error("%s: %s" % (exc.__class__.__name__, exc))
+        logger.error('%s: %s' % (exc.__class__.__name__, exc))
 
 
-async def http(url, method="GET", etag=None, date=None, encoding='utf-8', **kwargs):
+async def http(url, method='GET', etag=None, date=None, encoding='utf-8', **kwargs):
     try:
-        headers = kwargs.get("headers", {})
-        kwargs.pop("headers", 0)
+        headers = kwargs.get('headers', {})
+        kwargs.pop('headers', 0)
         if etag and len(etag) > 0:
-            headers["If-None-Match"] = etag
-            headers["If-Modified-Since"] = date
-        if method == "POST":
-            kwargs["body"] = kwargs.get("body", "")
+            headers['If-None-Match'] = etag
+            headers['If-Modified-Since'] = date
+        if method == 'POST':
+            kwargs['body'] = kwargs.get('body', '')
         request = Result(url, method, headers, **kwargs)
         response = await request.get()
         if isinstance(response, HTTPResponse):
             if response.error:
                 if etag and response.code == 304:
                     return Response(3, response, encoding)
-                logger.error("HTTPError: " + str(response.error))
+                logger.error('HTTPError: ' + str(response.error))
                 return Response(1, response, encoding)
             else:
                 return Response(0, response, encoding)
         else:
-            logger.error("HTTP Request timeout")
+            logger.error('HTTP Request timeout')
             return Response(2, response, encoding)
     except Exception as exc:
-        logger.error("%s: %s" % (exc.__class__.__name__, exc))
+        logger.error('%s: %s' % (exc.__class__.__name__, exc))
         return 2, None
 
 

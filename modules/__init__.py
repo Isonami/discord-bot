@@ -35,7 +35,7 @@ def main():
                 try:
                     dbm_modules.append(importlib.import_module('{}.{}'.format(__name__, mod_name)))
                 except Exception as exc:
-                    logger.error('Can not load source: %s: %s', exc.__class__.__name__, exc)
+                    logger.exception('Can not load source: %s: %s', exc.__class__.__name__, exc)
 
 
 async def init(bot):

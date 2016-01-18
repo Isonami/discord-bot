@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-import logging.config
 import tornado.auth
 import tornado.escape
 import tornado.ioloop
@@ -9,7 +8,6 @@ import tornado.web
 import json
 from datetime import datetime
 import re
-from tornado.ioloop import IOLoop
 
 mention = re.compile(r"<@([0-9]+)>")
 logger = logging.getLogger(__name__)

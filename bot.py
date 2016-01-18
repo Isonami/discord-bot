@@ -5,7 +5,6 @@ import json
 from time import time
 import os
 import re
-from threading import Thread
 import signal
 import sys
 import discord
@@ -16,6 +15,7 @@ import updates
 import asyncio
 from botlib import config, sql, scheduler, http, web, unflip
 from tornado.platform.asyncio import AsyncIOMainLoop
+import functools
 
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
@@ -64,6 +64,7 @@ restart_wait_time = 300
 
 
 def sigterm_handler(_signo, _stack_frame):
+    logger.error('Get signal: %s', signame)
     try:
         if 'bot' in globals() and not bot.disconnect:
             logger.info('Stopping...')
@@ -165,14 +166,11 @@ class Bot(object):
         @self.client.event
         async def on_ready():
             logger.debug('Logged in as %s (%s)', self.client.user.name, self.client.user.id)
-            return
-            for function in self.on_ready:
-                try:
-                    readyth = Thread(name='readyth_' + function.__name__, target=function, args=(self,))
-                    readyth.daemon = True
-                    readyth.start()
-                except Exception as exc:
-                    logger.error('%s: %s' % (exc.__class__.__name__, exc))
+            waiters = []
+            for function in self.modules.updates:
+                waiters.append(function(self))
+            for one_wait in waiters:
+                await one_wait
 
     async def restart_wait(self):
         cur_time = int(time())
@@ -231,13 +229,16 @@ class Bot(object):
                             return
                         if self.modules.cmds[mod_name].private and not message.channel.is_private:
                             return
-                        await command(self, message, *args, **kwargs)
+                        try:
+                            await command(self, message, *args, **kwargs)
+                        except Exception as exc:
+                            logger.exception("%s: %s", exc.__class__.__name__, exc)
             elif self.unflip and message.content.startswith(unflip.flip_str):
                 await unflip.unflip(self, message.channel)
         except Exception as exc:
             logger.exception('%s: %s', exc.__class__.__name__, exc)
 
-    def typing(self, channel):
+    async def typing(self, channel):
         self.client.send_typing(channel)
 
     def async_function(self, future):
@@ -272,6 +273,7 @@ def main(notrealy=False):
     logging.config.dictConfig(LOGGING)
     global logger
     logger = logging.getLogger(__name__)
+    # we may use subrocess in modules
     global loop
     loop = asyncio.get_event_loop()
     global bot
