@@ -302,6 +302,9 @@ async def main(cloop, notrealy=False):
     if bot.config.get('web.enable'):
         web.start_web(bot)
     await bot.run()
+    if 'endfuture' in globals():
+        while not globals()['endfuture'].done():
+            await asyncio.sleep(0.1)
 
 if __name__ == '__main__':
     if sys.platform == 'win32':
