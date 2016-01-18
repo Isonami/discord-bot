@@ -275,7 +275,8 @@ def main(notrealy=False):
     logger = logging.getLogger(__name__)
     # we may use subrocess in modules
     global loop
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     global bot
     if notrealy:
         bot = Bot(loop, notrealy=True)
