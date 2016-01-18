@@ -44,7 +44,8 @@ async def check_syntax():
             else:
                 return False
         else:
-            proc = await asyncio.create_subprocess_shell('%s >/dev/null 2>&1' % syntax_command)
+            proc = await asyncio.create_subprocess_shell('%s >/dev/null 2>&1' % syntax_command,
+                                                         stdout=asyncio.subprocess.PIPE)
             try:
                 exit_code = await asyncio.wait_for(proc.wait(), 45)
             except asyncio.futures.TimeoutError:

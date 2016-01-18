@@ -35,7 +35,7 @@ async def update():
                 logger.error('Git process return: %s', vars(e))
                 return 1
         else:
-            proc = await asyncio.create_subprocess_shell(update_command)
+            proc = await asyncio.create_subprocess_shell(update_command, stdout=asyncio.subprocess.PIPE)
             try:
                 exit_code = await asyncio.wait_for(proc.wait(), 45)
             except asyncio.futures.TimeoutError:
