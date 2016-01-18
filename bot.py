@@ -66,7 +66,7 @@ restart_wait_time = 300
 def sigterm_handler(*args):
     try:
         if 'endfuture' in globals():
-            if endfuture.done():
+            if globals()['endfuture'].done():
                 sys.exit(0)
             else:
                 return
