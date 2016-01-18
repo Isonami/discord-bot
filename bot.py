@@ -63,8 +63,8 @@ status_url = 'https://srhpyqt94yxb.statuspage.io/api/v2/summary.json'
 restart_wait_time = 300
 
 
-def sigterm_handler(signame):
-    logger.error('Get signal: %s', signame)
+def sigterm_handler(*args):
+    logger.error('Get signal: %s', args[0])
     try:
         if 'bot' in globals() and not bot.disconnect:
             logger.info('Stopping...')
@@ -108,9 +108,9 @@ class BotModules(object):
         self.cmds = {}
         self.reg = None
 
-    def imp(self):
-        self.updates = self.bot.loop.run_until_complete(updates.init(self.bot))
-        self.commands = self.bot.loop.run_until_complete(modules.init(self.bot))
+    async def imp(self):
+        self.updates = await updates.init(self.bot)
+        self.commands = await modules.init(self.bot)
         self.compile()
 
     def compile(self):
@@ -145,7 +145,6 @@ class Bot(object):
         self.scheduler = scheduler.Scheduler(self)
         self.sqlcon = sql.init(self)
         self.modules = BotModules(self)
-        self.modules.imp()
         self.login = self.config.get('discord.login')
         self.password = self.config.get('discord.password')
         self.unflip = self.config.get('discord.unflip', False)
@@ -181,6 +180,7 @@ class Bot(object):
             self._next_restart = cur_time + restart_wait_time
 
     async def run(self):
+        await bot.modules.imp()
         await self.client.login(self.login, self.password)
         while not self.disconnect:
             try:
@@ -255,7 +255,7 @@ class Bot(object):
         return user.id in self.admins
 
 
-def main(notrealy=False):
+async def main(cloop, notrealy=False):
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
     try:
@@ -275,15 +275,11 @@ def main(notrealy=False):
     logger = logging.getLogger(__name__)
     # we may use subrocess in modules
     global loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    if sys.platform != 'win32':
-        for signame in ('SIGINT', 'SIGTERM'):
-            loop.add_signal_handler(getattr(signal, signame),
-                                    functools.partial(sigterm_handler, signame))
+    loop = cloop
     global bot
     if notrealy:
         bot = Bot(loop, notrealy=True)
+        await bot.modules.imp()
         sys.exit(0)
     try:
         bot = Bot(loop)
@@ -292,8 +288,16 @@ def main(notrealy=False):
         sys.exit(0)
     if bot.config.get('web.enable'):
         web.start_web(bot)
-    loop.run_until_complete(bot.run())
-    loop.close()
+    await bot.run()
 
 if __name__ == '__main__':
-    main()
+    if sys.platform == 'win32':
+        signal.signal(signal.SIGINT, sigterm_handler)
+        signal.signal(signal.SIGTERM, sigterm_handler)
+    else:
+        for signame in ('SIGINT', 'SIGTERM'):
+            loop.add_signal_handler(getattr(signal, signame),
+                                    functools.partial(sigterm_handler, signame))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(loop))
+    loop.close()

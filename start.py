@@ -1,10 +1,10 @@
 #!/usr/bin/env python3.5
 # -*- coding: utf-8 -*-
 import sys
-import threading
-from time import sleep
 import signal
 import pip
+import asyncio
+import functools
 
 from botlib.daemon import Daemon
 try:
@@ -26,15 +26,22 @@ def check_packages():
         sys.exit(1)
 
 
+async def flush_err(self):
+    self.flush_err()
+
+
 class MyDaemon(Daemon):
     def run(self):
-        sctl_daemon = threading.Thread(name='BotProccess', target=bot.main)
-        sctl_daemon.start()
-        signal.signal(signal.SIGTERM, bot.sigterm_handler)
-        sleep(5)
-        self.flush_err()
-        while sctl_daemon.isAlive():
-            sleep(1)
+        loop = asyncio.get_event_loop()
+        if sys.platform == 'win32':
+            signal.signal(signal.SIGTERM, bot.sigterm_handler)
+        else:
+            for signame in ('SIGINT', 'SIGTERM'):
+                loop.add_signal_handler(getattr(signal, signame),
+                                        functools.partial(bot.sigterm_handler, signame))
+        loop.call_later(5, flush_err, self)
+        loop.run_until_complete(bot.main(loop))
+        loop.close()
 
 
 if __name__ == '__main__':
