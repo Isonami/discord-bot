@@ -38,6 +38,7 @@ class MyDaemon(Daemon):
 
 
 if __name__ == '__main__':
+    check_packages()
     daemon = MyDaemon(bot.PID)
     if len(sys.argv) == 2 or len(sys.argv) == 3:
         if 'start' == sys.argv[1]:
