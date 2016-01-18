@@ -241,7 +241,7 @@ class Bot(object):
         self.client.send_typing(channel)
 
     def async_function(self, future):
-        self.tasks.append(asyncio.ensure_future(future))
+        self.tasks.append(asyncio.ensure_future(future, loop=self.loop))
 
     async def logout(self):
         try:

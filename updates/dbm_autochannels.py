@@ -5,11 +5,9 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
-perm = asyncio.Queue()
 local_db = {}
 channels_db = {}
 role_pattern = '@{name}_text'
-wait_ok = asyncio.Event()
 perm_th_started = False
 
 
@@ -93,6 +91,10 @@ async def update_perm_th(bot):
 
 
 async def ready(bot):
+    global perm
+    perm = asyncio.Queue()
+    global wait_ok
+    wait_ok = asyncio.Event()
     if not perm_th_started:
         globals()['perm_th_started'] = True
 

@@ -6,7 +6,6 @@ import asyncio
 from os import path
 
 logger = logging.getLogger(__name__)
-insql = asyncio.Queue()
 open_dbs = {}
 
 sql_timeout = 30
@@ -159,5 +158,7 @@ def init(bot):
     sdir = bot.config.get("main.dir")
     global driver
     driver = bot.config.get("sql.driver", driver)
+    global insql
+    insql = asyncio.Queue()
     bot.async_function(sql_db(bot))
     return sqlcon
