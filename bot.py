@@ -152,9 +152,10 @@ class Bot(object):
         self.login = self.config.get('discord.login')
         self.password = self.config.get('discord.password')
         self.unflip = self.config.get('discord.unflip', False)
-        if not notrealy:
-            self.client = discord.Client(loop=self.loop)
-            self.ifnfo_line = ifnfo_line % self.config.get('version')
+        if notrealy:
+            return
+        self.client = discord.Client(loop=self.loop)
+        self.ifnfo_line = ifnfo_line % self.config.get('version')
 
         @self.client.event
         async def on_message(message):
