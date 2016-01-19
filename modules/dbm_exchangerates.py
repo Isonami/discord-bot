@@ -12,7 +12,7 @@ rates_def = 'RUB'
 rates_any_list = ['USD', 'EUR', 'UAH']
 rates_format = '1 {need_rate} = {value:0.2f}{arrow} {base_rate}'
 rates_last = {}
-without_job = False
+without_job = True
 ARROW_UP = chr(8593)
 ARROW_DOWN = chr(8595)
 
