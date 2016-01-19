@@ -8,6 +8,7 @@ import tornado.web
 import json
 from datetime import datetime
 import re
+import asyncio
 
 mention = re.compile(r"<@([0-9]+)>")
 logger = logging.getLogger(__name__)
@@ -73,7 +74,11 @@ async def get_stats(bot):
                         }
                         # except AttributeError:
                         #     pass
-                    for msg in await bot.client.logs_from(channel, limit=chat_limit):
+                    if asyncio.iscoroutinefunction(bot.client.logs_from):
+                        msg_logs = await bot.client.logs_from(channel, limit=chat_limit)
+                    else:
+                        msg_logs = bot.client.logs_from(channel, limit=chat_limit)
+                    for msg in msg_logs:
                         one_msg = {
                             "timestamp": (msg.timestamp - datetime.utcfromtimestamp(0)).total_seconds(),
                             "name": msg.author.name,
