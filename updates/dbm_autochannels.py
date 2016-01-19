@@ -28,12 +28,13 @@ async def update_all_permisions(bot, server, db, localdb):
 def update_channels_db(server, db):
     voice_channels = {}
     for channel in server.channels:
-        name = str(filter(lambda x: x in string.printable, channel.name.lower())).strip()
-        if channel.type == 'voice':
+        name = ''.join(filter(lambda x: x in string.printable, channel.name.lower())).strip()
+        if str(channel.type) == 'voice':
             voice_channels[name] = channel
     for channel in server.channels:
-        name = str(filter(lambda x: x in string.printable, channel.name.lower())).strip()
-        if channel.type == 'text' and name in voice_channels:
+        name = ''.join(filter(lambda x: x in string.printable, channel.name.lower())).strip()
+        if str(channel.type) == 'text' and name in voice_channels:
+            print(name)
             for role in server.roles:
                 role_name = role_pattern.format(name=name)
                 if role.name == role_name:
@@ -106,6 +107,7 @@ async def ready(bot):
             local_db[server.name] = {}
             channels_db[server.name] = {}
             update_channels_db(server, channels_db[server.name])
+            print(channels_db)
             await update_all_permisions(bot, server, channels_db[server.name], local_db[server.name])
 
         bot.async_function(update_perm_th(bot))
