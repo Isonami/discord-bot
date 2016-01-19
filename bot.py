@@ -247,7 +247,7 @@ class Bot(object):
             logger.exception('%s: %s', exc.__class__.__name__, exc)
 
     async def typing(self, channel):
-        self.client.send_typing(channel)
+        await self.client.send_typing(channel)
 
     def async_function(self, future):
         self.tasks.append(asyncio.ensure_future(future, loop=self.loop))
