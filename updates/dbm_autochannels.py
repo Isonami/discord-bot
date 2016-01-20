@@ -34,7 +34,6 @@ def update_channels_db(server, db):
     for channel in server.channels:
         name = ''.join(filter(lambda x: x in string.printable, channel.name.lower())).strip()
         if str(channel.type) == 'text' and name in voice_channels:
-            print(name)
             for role in server.roles:
                 role_name = role_pattern.format(name=name)
                 if role.name == role_name:
@@ -58,14 +57,16 @@ async def add_perm(bot, member, role):
     await asyncio.wait_for(wait_ok.wait(), 30)
 
 
-async def update_text_perm(bot, member):
+async def update_text_perm(bot, member_before, member):
     try:
         voice = member.voice_channel
         server_name = member.server.name
+        if not voice and not member_before.voice_channel or voice == member_before.voice_channel:
+            return
         if not voice:
             if member.id in local_db[server_name]:
                 channel_perm = channels_db[server_name][local_db[server_name][member.id]]
-                delete_perm(bot, member, channel_perm['role'])
+                await delete_perm(bot, member, channel_perm['role'])
                 local_db[server_name].pop(member.id)
                 logger.debug('Delete role %s for user %s', channel_perm['role'].name, member.name)
         else:
@@ -73,10 +74,10 @@ async def update_text_perm(bot, member):
                 return
             elif member.id in local_db[server_name]:
                 channel_perm = channels_db[server_name][local_db[server_name][member.id]]
-                delete_perm(bot, member, channel_perm['role'])
+                await delete_perm(bot, member, channel_perm['role'])
                 logger.debug('Delete role %s for user %s', channel_perm['role'].name, member.name)
             if voice.id in channels_db[server_name]:
-                add_perm(bot, member, channels_db[server_name][voice.id]['role'])
+                await add_perm(bot, member, channels_db[server_name][voice.id]['role'])
                 local_db[server_name][member.id] = voice.id
                 logger.debug('Set role %s for user %s', channels_db[server_name][voice.id]['role'].name, member.name)
                 return
@@ -87,8 +88,8 @@ async def update_text_perm(bot, member):
 
 async def update_perm_th(bot):
     while not bot.disconnect:
-        item = await perm.get()
-        await update_text_perm(bot, item)
+        items = await perm.get()
+        await update_text_perm(bot, *items)
 
 
 async def ready(bot):
@@ -107,11 +108,10 @@ async def ready(bot):
             local_db[server.name] = {}
             channels_db[server.name] = {}
             update_channels_db(server, channels_db[server.name])
-            print(channels_db)
             await update_all_permisions(bot, server, channels_db[server.name], local_db[server.name])
 
         bot.async_function(update_perm_th(bot))
 
         @bot.client.event
         async def on_voice_state_update(*args, **kwargs):
-            await perm.put(args[0])
+            await perm.put(args)

@@ -74,17 +74,20 @@ async def get_stats(bot):
                         }
                         # except AttributeError:
                         #     pass
-                    if asyncio.iscoroutinefunction(bot.client.logs_from):
-                        msg_logs = await bot.client.logs_from(channel, limit=chat_limit)
-                    else:
-                        msg_logs = bot.client.logs_from(channel, limit=chat_limit)
-                    for msg in msg_logs:
+
+                    def pars_msg(cur_msg):
                         one_msg = {
                             "timestamp": (msg.timestamp - datetime.utcfromtimestamp(0)).total_seconds(),
-                            "name": msg.author.name,
-                            "msg": msg.clean_content
+                            "name": cur_msg.author.name,
+                            "msg": cur_msg.clean_content
                         }
                         dict_out[server.name]["channels"][channel.name]["messages"].append(one_msg)
+                    if asyncio.iscoroutinefunction(bot.client.logs_from):
+                        for msg in await bot.client.logs_from(channel, limit=chat_limit):
+                            pars_msg(msg)
+                    else:
+                        async for msg in bot.client.logs_from(channel, limit=chat_limit):
+                            pars_msg(msg)
         return dict_out
     except Exception as exc:
         logger.error("%s: %s" % (exc.__class__.__name__, exc))
