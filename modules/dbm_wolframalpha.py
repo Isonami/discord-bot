@@ -117,7 +117,7 @@ async def getanswer(http, qinput):
     if not walpha_url:
         logger.debug('Can not get rates, no url specified!')
         return
-    response = await http(walpha_url.format(appid=walpha_appid, input=url_escape(qinput)), method='GET')
+    response = await http.get(walpha_url.format(appid=walpha_appid, input=url_escape(qinput)))
     if response.code == 0:
         return str(response)
 
@@ -126,7 +126,7 @@ async def getimage(http, src):
     logger.debug('Get img')
     if not walpha_static_url:
         return src
-    response = await http(src, method='GET')
+    response = await http.get(src)
     if response.code == 0:
         if not response.body:
             return src

@@ -85,7 +85,7 @@ class Rates(object):
         if not self._url:
             logger.debug('%sCan not get rates, no url specified!', logger_expand)
             return None, None
-        response = await self._http(self._url, method='GET', etag=self._etag, date=self._date)
+        response = await self._http.get(self._url, etag=self._etag, date=self._date)
         if response.code == 0:
             return str(response), response.headers
         elif response.code == 1:
@@ -134,7 +134,7 @@ async def main(self, message, *args, **kwargs):
     else:
         cur_list = rates.any_list
     if len(cur_list) <= 0:
-        await self.client.send_message(message.channel, 'Wrong currency specified')
+        await self.send(message.channel, 'Wrong currency specified')
         return
     cur_out = []
     for curenc in cur_list:

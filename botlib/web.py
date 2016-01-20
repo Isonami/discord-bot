@@ -44,7 +44,7 @@ class MainHandler(tornado.web.RequestHandler):
 async def get_stats(bot):
     try:
         dict_out = {}
-        for server in bot.client.servers:
+        for server in bot.servers:
             dict_out[server.name] = {}
             online = 0
             members_temp = []
@@ -82,11 +82,11 @@ async def get_stats(bot):
                             "msg": cur_msg.clean_content
                         }
                         dict_out[server.name]["channels"][channel.name]["messages"].append(one_msg)
-                    if asyncio.iscoroutinefunction(bot.client.logs_from):
-                        for msg in await bot.client.logs_from(channel, limit=chat_limit):
+                    if asyncio.iscoroutinefunction(bot.logs_from):
+                        for msg in await bot.logs_from(channel, limit=chat_limit):
                             pars_msg(msg)
                     else:
-                        async for msg in bot.client.logs_from(channel, limit=chat_limit):
+                        async for msg in bot.logs_from(channel, limit=chat_limit):
                             pars_msg(msg)
         return dict_out
     except Exception as exc:

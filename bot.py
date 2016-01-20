@@ -9,7 +9,6 @@ import signal
 import sys
 import discord
 from discord import endpoints
-import tornado.httpclient as httpclient
 import modules
 import updates
 import asyncio
@@ -21,40 +20,6 @@ import functools
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
 PID = config.PID
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] (%(threadName)-10s) %(message)s',
-            'datefmt': '%d/%b/%Y %H:%M:%S'
-        },
-        'simple': {
-            'format': '%(levelname)s %(message)s'
-        },
-        },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-            },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'bot.log',
-            'formatter': 'verbose',
-            'maxBytes': 1024 * 1024 * 5,
-            'backupCount': 3,
-        },
-        },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            },
-    }
-}
 logging_file_name = 'logging.json'
 ifnfo_line = '''Nedo bot version %s
 by Isonami (github.com/Isonami/discord-bot)'''
@@ -76,34 +41,13 @@ def sigterm_handler(*args):
             logger.info('Stopping...')
             bot.disconnect = True
             global endfuture
-            endfuture = asyncio.ensure_future(bot.logout())
+            endfuture = asyncio.ensure_future(bot.bot_logout())
         if 'bot' in globals() and bot.disconnect:
             return
         sys.exit(0)
     except Exception as exc:
         logger.error('%s: %s' % (exc.__class__.__name__, exc))
         return None, None
-
-
-def server_status(client):
-    try:
-        logger.debug('Get server status')
-        response = client.fetch(status_url, method='GET')
-        # print response.body
-        rvars = json.loads(response.body)
-        if 'components' in rvars:
-            for item in rvars['components']:
-                if item['name'] == 'API':
-                    if item['status'] == 'operational':
-                        logger.debug('Server status is: operational')
-                        return True
-                    logger.debug('Server status is: %s' % item['status'])
-                    break
-        return None
-    except httpclient.HTTPError as e:
-        # HTTPError is raised for non-200 responses; the response
-        # can be found in e.response.
-        logger.error('HTTPError: ' + str(e))
 
 
 class BotModules(object):
@@ -133,11 +77,11 @@ class BotModules(object):
         self.reg = re.compile(all_reg[:-1], re.IGNORECASE)
 
 
-class Bot(object):
+class Bot(discord.Client):
     def __init__(self, main_loop, notrealy=False):
-        self.loop = main_loop
+        super().__init__(loop=main_loop)
         ioloop = AsyncIOMainLoop()
-        ioloop.asyncio_loop = self.loop
+        ioloop.asyncio_loop = main_loop
         ioloop.install()
         self.notrealy = notrealy
         self.tornado_loop = ioloop
@@ -152,27 +96,24 @@ class Bot(object):
         self.scheduler = scheduler.Scheduler(self)
         self.sqlcon = sql.init(self)
         self.modules = BotModules(self)
-        self.login = self.config.get('discord.login')
-        self.password = self.config.get('discord.password')
+        self.user_login = self.config.get('discord.login')
+        self.user_password = self.config.get('discord.password')
         self.unflip = self.config.get('discord.unflip', False)
-        if self.notrealy:
-            return
-        self.client = discord.Client(loop=self.loop)
         self.ifnfo_line = ifnfo_line % self.config.get('version')
 
-        @self.client.event
+        @self.event
         async def on_message(message):
             logger.debug('New message %s', message)
             await self.msg_proc(message)
 
-        @self.client.event
+        @self.event
         async def on_message_edit(old_message, message):
             logger.debug('Message edited ftom %s to %s', old_message, message)
             await self.msg_proc(message)
 
-        @self.client.event
+        @self.event
         async def on_ready():
-            logger.debug('Logged in as %s (%s)', self.client.user.name, self.client.user.id)
+            logger.debug('Logged in as %s (%s)', self.user.name, self.user.id)
             waiters = []
             for upd in self.modules.updates:
                 waiters.append(upd.ready(self))
@@ -187,32 +128,32 @@ class Bot(object):
             await asyncio.sleep(self._next_restart - cur_time)
             self._next_restart = cur_time + restart_wait_time
 
-    async def run(self):
+    async def bot_run(self):
         await bot.modules.imp()
-        await self.client.login(self.login, self.password)
+        await self.login(self.user_login, self.user_password)
         while not self.disconnect:
             try:
-                await self.client.connect()
+                await self.connect()
             except (discord.ClientException, discord.GatewayNotFound) as exc:
                 if self.disconnect:
                     break
                 logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
                 if isinstance(exc, discord.GatewayNotFound):
-                    resp = await self.http(endpoints.GATEWAY, headers=self.client.headers)
+                    resp = await self.http.get(endpoints.GATEWAY, headers=self.headers)
                     if resp.code == 1 and resp.http_code == 401:
                         logger.error('Got 401 UNAUTHORIZED, relogin...')
                         await self.restart_wait()
-                        if self.client.ws:
-                            await self.client.logout()
-                        await self.client.login(self.login, self.password)
+                        if self.ws:
+                            await self.logout()
+                        await self.login(self.login, self.password)
                         continue
                 await self.restart_wait()
             except Exception as exc:
                 logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
-                await self.client.logout()
+                await self.logout()
 
     async def send(self, channel, message, **kwargs):
-        await self.client.send_message(channel, message, **kwargs)
+        await self.send_message(channel, message, **kwargs)
 
     async def msg_proc(self, message):
         try:
@@ -247,22 +188,22 @@ class Bot(object):
             logger.exception('%s: %s', exc.__class__.__name__, exc)
 
     async def typing(self, channel):
-        await self.client.send_typing(channel)
+        await self.send_typing(channel)
 
     def async_function(self, future):
         self.tasks.append(asyncio.ensure_future(future, loop=self.loop))
 
     @staticmethod
-    async def close():
+    async def close_connections():
         await sql.close()
 
-    async def logout(self):
+    async def bot_logout(self):
         try:
             logger.debug('Logout from server')
-            await self.client.logout()
+            await self.logout()
         except Exception as exc:
             logger.error('%s: %s', exc.__class__.__name__, exc)
-        await self.close()
+        await self.close_connections()
 
     def is_admin(self, user):
         return user.id in self.admins
@@ -292,7 +233,7 @@ async def main(cloop, notrealy=False):
     if notrealy:
         bot = Bot(loop, notrealy=True)
         await bot.modules.imp()
-        await bot.close()
+        await bot.close_connections()
         sys.exit(0)
     try:
         bot = Bot(loop)
@@ -301,7 +242,7 @@ async def main(cloop, notrealy=False):
         sys.exit(0)
     if bot.config.get('web.enable'):
         web.start_web(bot)
-    await bot.run()
+    await bot.bot_run()
     if 'endfuture' in globals():
         while not globals()['endfuture'].done():
             await asyncio.sleep(0.1)

@@ -16,12 +16,12 @@ bot_play_th_started = False
 
 
 async def get_game_list(bot):
-    response = await bot.http(init_url, method='GET')
+    response = await bot.http.get(init_url)
     if response.code == 0:
         r = re.compile('<script src=\"([a-z0-9\./]+)\"></script>')
         m = r.findall(str(response))
         if len(m) > 0:
-            response = await bot.http(url_base.format(url=m[-1]), method='GET')
+            response = await bot.http.get(url_base.format(url=m[-1]))
             if response.code == 0:
                 r = re.compile('executables:(\{(?:(?:[a-z0-9]+:\[[^\]]+\])?\}?,)+)id:([0-9]+),name:\"([^\"]+)\"')
                 return r.findall(str(response))
@@ -55,11 +55,11 @@ async def botplayth(cuuid, bot):
         if randint(1, play_chance) == 1:
             games['id'] = games['list'][randint(0, games['len']-1)]
             logger.debug('Set game to: %s', games['id'].name)
-            await bot.client.change_status(game=games['id'])
+            await bot.change_status(game=games['id'])
         elif games['id']:
             logger.debug('End game')
             games['id'] = None
-            await bot.client.change_status()
+            await bot.change_status()
 
 
 async def ready(bot):

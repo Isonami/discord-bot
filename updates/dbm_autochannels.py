@@ -47,13 +47,13 @@ def update_channels_db(server, db):
 
 async def delete_perm(bot, member, role):
     wait_ok.clear()
-    await bot.client.remove_roles(member, *tuple(filter(lambda x: x.id == role.id, member.roles)))
+    await bot.remove_roles(member, *tuple(filter(lambda x: x.id == role.id, member.roles)))
     await asyncio.wait_for(wait_ok.wait(), 30)
 
 
 async def add_perm(bot, member, role):
     wait_ok.clear()
-    await bot.client.add_roles(member, role)
+    await bot.add_roles(member, role)
     await asyncio.wait_for(wait_ok.wait(), 30)
 
 
@@ -100,11 +100,11 @@ async def ready(bot):
     if not perm_th_started:
         globals()['perm_th_started'] = True
 
-        @bot.client.event
+        @bot.event
         async def on_member_update(*args, **kwargs):
             wait_ok.set()
 
-        for server in bot.client.servers:
+        for server in bot.servers:
             local_db[server.name] = {}
             channels_db[server.name] = {}
             update_channels_db(server, channels_db[server.name])
@@ -112,6 +112,6 @@ async def ready(bot):
 
         bot.async_function(update_perm_th(bot))
 
-        @bot.client.event
+        @bot.event
         async def on_voice_state_update(*args, **kwargs):
             await perm.put(args)

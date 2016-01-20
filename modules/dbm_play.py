@@ -17,7 +17,7 @@ async def wait(bot, twait):
     await asyncio.sleep(twait - time())
     if bot.config.get('botcanplay.play_game') and bot.config.get('botcanplay.play_game') == twait:
         logger.debug('End game')
-        await bot.client.change_status()
+        await bot.change_status()
 
 
 async def main(self, message, *args, **kwargs):
@@ -28,6 +28,6 @@ async def main(self, message, *args, **kwargs):
         game = game.strip()
         self.config.set('botcanplay.play_game', twait)
         logger.debug('Set game to: %s', game)
-        await self.client.change_status(game=Game(name=game))
+        await self.change_status(game=Game(name=game))
         await self.send(message.channel, 'Set game to: %s' % game)
         await wait(self, twait)

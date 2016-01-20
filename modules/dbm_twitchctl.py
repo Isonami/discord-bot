@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-from tornado.escape import url_escape
 import json
 
 command = r'twitch (?P<twitchcmd>(?:add)|(?:del)) ' \
@@ -55,8 +54,8 @@ async def sd_update_channels(stream, state, channels, options):
 
 
 async def check_stream(http, stream):
-    url = '/'.join([streams_url, url_escape(stream)])
-    response = await http(url, headers=headers)
+    url = '/'.join([streams_url, http.url_escape(stream)])
+    response = await http.get(url, headers=headers)
     if response.code == 0:
         logger.debug('Twitch response: %s', str(response))
         try:

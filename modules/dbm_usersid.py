@@ -16,7 +16,7 @@ async def init(bot):
 
 async def main(self, message, *args, **kwargs):
     server_name = kwargs['server_name']
-    for server in self.client.servers:
+    for server in self.servers:
         if server.name.lower() == server_name:
             ans = []
             for user in server.members:

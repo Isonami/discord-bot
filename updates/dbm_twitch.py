@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import json
-from tornado.escape import url_escape
 
 
 logger = logging.getLogger(__name__)
@@ -73,8 +72,8 @@ async def update(cuuid, bot):
     streams = await sd_select_channels()
     for one_stream in streams:
         if len(one_stream['Channels']) > 0:
-            url = '/'.join([streams_url, url_escape(one_stream['Name'])])
-            response = await bot.http(url, headers=headers)
+            url = '/'.join([streams_url, bot.http.url_escape(one_stream['Name'])])
+            response = await bot.http.get(url, headers=headers)
             if response.code == 0:
                 logger.debug('[%s] Twitch response: %s', cuuid, str(response))
                 try:
@@ -101,7 +100,7 @@ async def update(cuuid, bot):
                         for channel_id in one_stream['Channels']:
                             logger.debug(channel_id)
                             try:
-                                await bot.send(bot.client.get_channel(str(channel_id)), msg)
+                                await bot.send(bot.get_channel(str(channel_id)), msg)
                             except Exception as exc:
                                 logger.error('[%s] %s: %s', cuuid, exc.__class__.__name__, exc)
                 else:
@@ -111,7 +110,7 @@ async def update(cuuid, bot):
 
 
 async def get_stream_url(http):
-    response = await http(base_url)
+    response = await http.get(base_url)
     if response.code == 0:
         ret_obj = json.loads(str(response))
         if '_links' in ret_obj and 'streams' in ret_obj['_links']:

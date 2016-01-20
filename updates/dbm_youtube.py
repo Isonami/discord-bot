@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-from tornado.escape import url_escape
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 from datetime import datetime
@@ -62,8 +61,8 @@ async def sd_update_channels(name, channels, ytype, lastid, lastdate):
 
 
 async def get_last_video(cuuid, http, name, ytype):
-    url = base_url.format(channel=url_escape(name), type=url_escape(ytype))
-    response = await http(url)
+    url = base_url.format(channel=http.url_escape(name), type=http.url_escape(ytype))
+    response = await http.get(url)
     if response.code == 0:
         try:
             mdom = minidom.parseString(str(response))
@@ -103,4 +102,4 @@ async def update(cuuid, bot):
                     await sd_set_state(you_chann['ID'], video['id'], video['date'])
                     msg = new_msg.format(name=video['author'], title=video['title'], url=video['url'])
                     for channel_id in you_chann['Channels']:
-                        await bot.send(bot.client.get_channel(str(channel_id)), msg)
+                        await bot.send(bot.get_channel(str(channel_id)), msg)
