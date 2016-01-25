@@ -28,8 +28,6 @@ async def init(bot):
     global job
     job = bot.scheduler.new(update, 'Youtube', dealy, bot)
     job.start()
-    bot.config.set('youtube.enable', True)
-    bot.config.set('youtube.module', globals())
 
 
 async def sd_select_channels():

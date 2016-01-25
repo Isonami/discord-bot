@@ -45,7 +45,8 @@ async def init(bot):
         dis = bot.config.get('disable.modules', [])
         for obj in dbm_modules:
             name = obj.__name__.split('.')[-1]
-            if name[len(mbase):] not in dis:
+            real_name = name[len(mbase):]
+            if real_name not in dis:
                 if hasattr(obj, 'init'):
                     try:
                         await obj.init(bot)
@@ -53,9 +54,10 @@ async def init(bot):
                         logger.error('Can not init module %s', name)
                         logger.exception('%s: %s', exc.__class__.__name__, exc)
                         continue
-                cmd = Command(obj, name)
+                cmd = Command(obj, real_name)
                 if cmd.valid:
                     commands.append(cmd)
+                bot.modules.loaded(real_name, obj)
     except Exception as exc:
         logger.exception('%s: %s', exc.__class__.__name__, exc)
         raise

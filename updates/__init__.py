@@ -42,16 +42,18 @@ async def init(bot):
         dis = bot.config.get("disable.updates", [])
         for obj in dbm_updates:
             name = obj.__name__.split('.')[-1]
-            if name[len(mbase):] not in dis:
+            real_name = name[len(mbase):]
+            if real_name not in dis:
                 if hasattr(obj, "init"):
                     try:
                         await obj.init(bot)
                     except Exception as exc:
                         logger.error("Can not init module %s", name)
                         logger.exception("%s: %s", exc.__class__.__name__, exc)
-                upd = Update(obj, name)
+                upd = Update(obj, real_name)
                 if upd.valid:
                     updates.append(upd)
+                bot.modules.loaded(real_name, obj)
     except Exception as exc:
         logger.exception("%s: %s", exc.__class__.__name__, exc)
         raise

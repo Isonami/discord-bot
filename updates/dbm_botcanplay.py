@@ -74,3 +74,5 @@ async def init(bot):
     play_delay = bot.config.get('botcanplay.delay', play_delay)
     global play_chance
     play_chance = bot.config.get('botcanplay.chance', play_chance)
+    if not isinstance(play_delay, int) or not isinstance(play_chance, int) or play_chance < 1:
+        raise ValueError('botcanplay.delay or botcanplay.chance not an intenger or botcanplay.chance < 1')

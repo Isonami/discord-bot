@@ -3,7 +3,7 @@ import os.path as path
 import logging
 import json
 from datetime import datetime
-VERSION = '5.0.3'
+VERSION = '5.0.4'
 PID = '/var/run/discord-bot/bot.pid'
 CONFIG = {
     'discord': {
@@ -35,9 +35,11 @@ config_file_name = 'settings.json'
 
 
 class Config(object):
-    def __init__(self):
+    def __init__(self, conf_file=config_file_name, nullconfig=False):
+        if nullconfig:
+            return
         main_dir = path.join(path.dirname(path.realpath(__file__)), path.pardir)
-        json_file = path.join(main_dir, config_file_name)
+        json_file = path.join(main_dir, conf_file)
         if path.exists(json_file):
             try:
                 with open(json_file) as json_config:

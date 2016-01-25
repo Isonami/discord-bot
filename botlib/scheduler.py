@@ -42,11 +42,11 @@ class Job(object):
         result = result.result()[0]
         if isinstance(result, Exception):
             logger.exception("Job [%s] %s: %s", cuuid, result.__class__.__name__, result)
-        logger.debug('End Job: %s UUID(%s)', str(self), cuuid)
+        logger.info('End Job: %s UUID(%s)', str(self), cuuid)
 
     def _call(self):
         cuuid = str(uuid.uuid4())
-        logger.debug('Start Job: %s UUID(%s)', str(self), cuuid)
+        logger.info('Start Job: %s UUID(%s)', str(self), cuuid)
         asyncio.gather(
             self.target(cuuid, *self.args),
             loop=self.loop, return_exceptions=True

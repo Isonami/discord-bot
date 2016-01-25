@@ -29,11 +29,10 @@ STRINGS = [
 
 
 async def init(bot):
-    enable = bot.config.get('youtube.enable', False)
-    if not enable:
-        raise EnvironmentError('Can not start control module without scheduler module!')
     global youtube_module
-    youtube_module = bot.config.get('youtube.module')
+    youtube_module = bot.modules.youtube
+    if not youtube_module:
+        raise EnvironmentError('Can not start control module without scheduler module!')
 
 
 async def main(self, message, *args, **kwargs):
@@ -47,21 +46,21 @@ async def main(self, message, *args, **kwargs):
         if not cmd or not name or not youtype and youtype not in types:
             await self.send(message.channel, STRINGS[1])
             return
-        you_chann = await youtube_module['sd_select_channel'](types[str(youtype)], name)
+        you_chann = await youtube_module.sd_select_channel(types[str(youtype)], name)
         cmd = cmd.lower()
         if cmd == 'add':
             if message.channel.id in you_chann['Channels']:
                 await self.send(message.channel, STRINGS[2].format(ychannel=you_chann['Name'],
                                                                    channel=message.channel.name))
             else:
-                video = await youtube_module['get_last_video'](self.http, you_chann['Name'], you_chann['Type'])
+                video = await youtube_module.get_last_video(self.http, you_chann['Name'], you_chann['Type'])
                 if not video:
                     await self.send(message.channel, STRINGS[3].format(ychannel=you_chann['Name']))
                     return
                 you_chann['Channels'].append(message.channel.id)
                 you_chann['Lastid'] = you_chann['Lastid'] if you_chann['Lastid'] else video['id']
                 you_chann['Lastdate'] = you_chann['Lastdate'] if you_chann['Lastdate'] else video['date']
-                ret = await youtube_module['sd_update_channels'](you_chann['Name'], you_chann['Channels'],
+                ret = await youtube_module.sd_update_channels(you_chann['Name'], you_chann['Channels'],
                                                                  you_chann['Type'], you_chann['Lastid'],
                                                                  you_chann['Lastdate'])
                 if ret:
@@ -72,7 +71,7 @@ async def main(self, message, *args, **kwargs):
         elif cmd == 'del':
             if message.channel.id in you_chann['Channels']:
                 you_chann['Channels'].remove(message.channel.id)
-                ret = await youtube_module['sd_update_channels'](you_chann['Name'], you_chann['Channels'],
+                ret = await youtube_module.sd_update_channels(you_chann['Name'], you_chann['Channels'],
                                                                  you_chann['Type'], you_chann['Lastid'],
                                                                  you_chann['Lastdate'])
                 if ret:

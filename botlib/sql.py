@@ -133,6 +133,7 @@ async def sql_db(bot):
                     con = await aioodbc.connect(dsn=item.args[0], loop=loop)
                     cur = await con.cursor()
                     await cur.execute(item.sql)
+                    con.commit()
                     item.result = (con, cur)
                 else:
                     await item.cur.execute(item.sql, item.args)

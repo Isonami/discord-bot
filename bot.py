@@ -53,19 +53,34 @@ def sigterm_handler(*args):
 class BotModules(object):
     def __init__(self, dbot):
         self.bot = dbot
-        self.commands = []
+        self._modules = {}
+        self._commands = []
         self.updates = []
         self.cmds = {}
         self.reg = None
 
+    def __getattr__(self, item):
+        if item in self._modules:
+            return self._modules[item]
+        else:
+            logger.error('Module %s is not loaded (or %s is wrong attribute).', item, item)
+            return None
+
+    def loaded(self, item, module):
+        if item in self._modules:
+            raise ValueError('Module with name {} allready loaded.'.format(item))
+        if item in self.__dict__:
+            raise ValueError('Can not replace reserver name {}, please use another'.format(item))
+        self._modules[item] = module
+
     async def imp(self):
         self.updates = await updates.init(self.bot)
-        self.commands = await modules.init(self.bot)
-        self.compile()
+        self._commands = await modules.init(self.bot)
+        self._compile()
 
-    def compile(self):
+    def _compile(self):
         all_reg = r''
-        for cmd in self.commands:
+        for cmd in self._commands:
             if isinstance(cmd, modules.Command):
                 if cmd.description:
                     desk = self.bot.config.get('.'.join([str(cmd), 'description']), cmd.description)
@@ -125,6 +140,7 @@ class Bot(discord.Client):
         if cur_time > self._next_restart:
             self._next_restart = cur_time + restart_wait_time
         else:
+            logger.info('Waiting for next restart...')
             await asyncio.sleep(self._next_restart - cur_time)
             self._next_restart = cur_time + restart_wait_time
 
@@ -138,19 +154,23 @@ class Bot(discord.Client):
                 if self.disconnect:
                     break
                 logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
-                if isinstance(exc, discord.GatewayNotFound):
-                    resp = await self.http.get(endpoints.GATEWAY, headers=self.headers)
-                    if resp.code == 1 and resp.http_code == 401:
-                        logger.error('Got 401 UNAUTHORIZED, relogin...')
-                        await self.restart_wait()
-                        if self.ws:
-                            await self.logout()
-                        await self.login(self.login, self.password)
-                        continue
+                resp = await self.http.get(endpoints.GATEWAY, headers=self.headers)
+                if resp.code == 1 and resp.http_code == 401:
+                    logger.error('Got 401 UNAUTHORIZED, relogin...')
+                    await self.restart_wait()
+                    if self.ws:
+                        await self.logout()
+                    await self.login(self.user_login, self.user_password)
+                    continue
                 await self.restart_wait()
             except Exception as exc:
                 logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
                 await self.logout()
+                break
+            if self.is_closed:
+                await self.logout()
+                await self.login(self.user_login, self.user_password)
+            await self.restart_wait()
 
     async def send(self, channel, message, **kwargs):
         await self.send_message(channel, message, **kwargs)
@@ -246,6 +266,8 @@ async def main(cloop, notrealy=False):
     if 'endfuture' in globals():
         while not globals()['endfuture'].done():
             await asyncio.sleep(0.1)
+    else:
+        await bot.close_connections()
 
 if __name__ == '__main__':
     if sys.platform == 'win32':
