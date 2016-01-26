@@ -61,8 +61,8 @@ async def main(self, message, *args, **kwargs):
                 you_chann['Lastid'] = you_chann['Lastid'] if you_chann['Lastid'] else video['id']
                 you_chann['Lastdate'] = you_chann['Lastdate'] if you_chann['Lastdate'] else video['date']
                 ret = await youtube_module.sd_update_channels(you_chann['Name'], you_chann['Channels'],
-                                                                 you_chann['Type'], you_chann['Lastid'],
-                                                                 you_chann['Lastdate'])
+                                                              you_chann['Type'], you_chann['Lastid'],
+                                                              you_chann['Lastdate'])
                 if ret:
                     await self.send(message.channel, STRINGS[4].format(ychannel=you_chann['Name'],
                                                                        channel=message.channel.name))
@@ -72,8 +72,8 @@ async def main(self, message, *args, **kwargs):
             if message.channel.id in you_chann['Channels']:
                 you_chann['Channels'].remove(message.channel.id)
                 ret = await youtube_module.sd_update_channels(you_chann['Name'], you_chann['Channels'],
-                                                                 you_chann['Type'], you_chann['Lastid'],
-                                                                 you_chann['Lastdate'])
+                                                              you_chann['Type'], you_chann['Lastid'],
+                                                              you_chann['Lastdate'])
                 if ret:
                     await self.send(message.channel, STRINGS[6].format(ychannel=you_chann['Name'],
                                                                        channel=message.channel.name))
