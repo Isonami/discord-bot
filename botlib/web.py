@@ -24,7 +24,7 @@ class MainHandler(tornado.web.RequestHandler):
         if not bot:
             raise ValueError('kwarg "bot" must be specified!')
         self.bot = bot
-        super(MainHandler, self).__init__(*args)
+        super().__init__(*args)
     async def get(self,):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         ret_dict = await get_stats(self.bot)

@@ -162,15 +162,17 @@ class Bot(discord.Client):
                     if self.ws:
                         await self.logout()
                     await self.login(self.user_login, self.user_password)
-                    continue
+                continue
             except Exception as exc:
                 logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
                 await self.logout()
                 break
+            if self.disconnect:
+                return
+            await self.restart_wait()
             if self.is_closed:
                 await self.logout()
                 await self.login(self.user_login, self.user_password)
-            await self.restart_wait()
 
     async def send(self, channel, message, **kwargs):
         await self.send_message(channel, message, **kwargs)
