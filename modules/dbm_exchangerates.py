@@ -20,16 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 async def init(bot):
-    global rates_url
-    rates_url = bot.config.get('exchangerates.url').format(appid=bot.config.get('exchangerates.appid'))
-    global rates_def
-    rates_def = bot.config.get('exchangerates.start_currency', rates_def)
-    global rates_any_list
-    rates_any_list = bot.config.get('exchangerates.rates_any_list', rates_any_list)
-    global rates_delay
-    rates_delay = bot.config.get('exchangerates.delay', rates_delay)
-    global rates_format
-    rates_format = bot.config.get('exchangerates.format', rates_format)
     global without_job
     without_job = bot.config.get('exchangerates.without_job', without_job)
     global rates
