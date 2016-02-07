@@ -9,9 +9,10 @@ description = '{cmd_start}wr city|city(country short name)|city id - show weathe
 
 weather_format = '{city} {country} - {main[temp]:.1f}°C {weather[main]} {cached:cached at %d.%M %H:%m}'
 weather_url = 'http://api.openweathermap.org/data/2.5/weather'
+nocache = False
 
 countryre = re.compile(r'\(([a-z]{1,3})\)')
-cachedre = re.compile(r'\{cached(:?:[^}]+)?}')
+cachedre = re.compile(r' \{cached(:?:[^}]+)?}')
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,8 @@ async def init(bot):
         raise ValueError('\'appid\' required!')
     global weather_format
     weather_format = bot.config.get('openweather.format', weather_format)
+    global nocache
+    weather_format = bot.config.get('openweather.nocache', nocache)
     global sqlcon
     sqlcon = await bot.sqlcon(sql_init, db_name)
     global weather
@@ -36,11 +39,11 @@ async def init(bot):
 
 
 async def db_get_id(city):
-    splited = city.split(',')
-    if len(splited) > 1:
-        ret = await sqlcon.request('SELECT Code FROM Cities WHERE Name = ? AND Country = ?;', splited[0], splited[1])
+    splitted = city.split(',')
+    if len(splitted) > 1:
+        ret = await sqlcon.request('SELECT Code FROM Cities WHERE Name = ? AND Country = ?;', splitted[0], splitted[1])
     else:
-        ret = await sqlcon.request('SELECT Code FROM Cities WHERE Name = ?;', splited[0])
+        ret = await sqlcon.request('SELECT Code FROM Cities WHERE Name = ?;', splitted[0])
     ans = []
     if ret:
         for row in ret:
@@ -230,7 +233,7 @@ async def main(self, message, *args, **kwargs):
     ans = []
     for one_weather in res():
         fmt = weather_format
-        if 'cached' not in one_weather:
+        if 'cached' not in one_weather or nocache:
             fmt = cachedre.sub('', fmt)
         ans.append(fmt.format(**one_weather))
     await self.send(message.channel, ', '.join(ans))

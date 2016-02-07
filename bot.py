@@ -158,10 +158,10 @@ class Bot(discord.Client):
                 resp = await self.http.get(endpoints.GATEWAY, headers=self.headers)
                 if resp.code == 1 and resp.http_code == 401:
                     logger.error('Got 401 UNAUTHORIZED, relogin...')
-                    await self.restart_wait()
                     if self.ws:
                         await self.logout()
                     await self.login(self.user_login, self.user_password)
+                    self._closed.clear()
                 continue
             except Exception as exc:
                 logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
@@ -173,6 +173,7 @@ class Bot(discord.Client):
             if self.is_closed:
                 await self.logout()
                 await self.login(self.user_login, self.user_password)
+                self._closed.clear()
 
     async def send(self, channel, message, **kwargs):
         await self.send_message(channel, message, **kwargs)
