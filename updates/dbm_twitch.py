@@ -93,7 +93,7 @@ async def update(cuuid, bot):
                             msg = online_msg.format(url=stream['channel'].get("url", ""),
                                                     name=stream['channel'].get('name', ''),
                                                     title=stream['channel'].get('status', ''),
-                                                    game=stream['channel'].get('game", '''))
+                                                    game=stream['channel'].get('game', ''))
                         except Exception as exc:
                             logger.error('[%s] %s: %s', cuuid, exc.__class__.__name__, exc)
                             return
