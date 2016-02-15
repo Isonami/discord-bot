@@ -4,11 +4,11 @@ import json
 import re
 from datetime import datetime
 
-command = r'wr(?P<weather_cities>(?: [a-z0-9]+(?:(?:\([a-z]{2,3}\))|(?:,[a-z]{1,3}))?)+)?'
-description = '{cmd_start}wr city|city(country short name)|city id - show weather for one city or more'
+command = r'w[rz](?P<weather_cities>(?: [a-z0-9]+(?:(?:\([a-z]{2,3}\))|(?:,[a-z]{1,3}))?)+)?'
+description = '{cmd_start}wr|wz city|city(country short name)|city id - show weather for one city or more'
 
 weather_format = '{city} {country} - {main[temp]:.1f}°C {weather[main]} {cached:cached at %d.%M %H:%m}'
-weather_url = 'http://api.openweathermap.org/data/2.5/weather'
+weather_url = 'http://api.openweathermap.org/data/2.5/'
 nocache = False
 
 countryre = re.compile(r'\(([a-z]{1,3})\)')
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 sql_init = '''
    CREATE TABLE IF NOT EXISTS Cities(ID INTEGER PRIMARY KEY, Name TEXT, Country TEXT, Code TEXT);
+   CREATE TABLE IF NOT EXISTS Useroptions(ID INTEGER PRIMARY KEY, Name TEXT, Option TEXT);
 '''
 db_name = 'cities.db'
 
@@ -30,7 +31,7 @@ async def init(bot):
     global weather_format
     weather_format = bot.config.get('openweather.format', weather_format)
     global nocache
-    weather_format = bot.config.get('openweather.nocache', nocache)
+    nocache = bot.config.get('openweather.nocache', nocache)
     global sqlcon
     sqlcon = await bot.sqlcon(sql_init, db_name)
     global weather
@@ -57,6 +58,20 @@ async def db_update_id(name, country, code):
     code = str(code)
     return await sqlcon.commit('INSERT OR REPLACE INTO Cities VALUES ((SELECT ID FROM Cities WHERE Name = ?'
                                ' AND Country = ?), ?, ?, ?)', name, country, name, country, code)
+
+async def db_get_user_option(userid):
+    userid = str(userid)
+    row = await sqlcon.request('SELECT Option FROM Useroptions WHERE Name = ?;', userid, one=True)
+    if row:
+        print(row)
+        return row[0].split(',')
+
+
+async def db_set_user_option(userid, option):
+    userid = str(userid)
+    option = ','.join(option)
+    return await sqlcon.commit('INSERT OR REPLACE INTO Useroptions VALUES ((SELECT ID FROM Useroptions WHERE Name = ?),'
+                               ' ?, ?)', userid, userid, option)
 
 
 class Result(object):
@@ -102,7 +117,8 @@ class Result(object):
 
 class Weather(object):
     def __init__(self, bot, appid):
-        self._url = bot.config.get('openweather.url', weather_url)
+        self._url_one = '{}weather'.format(bot.config.get('openweather.url', weather_url))
+        self._url_group = '{}group'.format(bot.config.get('openweather.url', weather_url))
         self._default = bot.config.get('openweather.default')
         self._appid = appid
         self._cache = {}
@@ -149,7 +165,7 @@ class Weather(object):
 
     async def _get_by_name(self, city):
         ret = []
-        res = await self._http.get(self._url, payload={'q': city, 'appid': self._appid, 'units': 'metric'})
+        res = await self._http.get(self._url_one, payload={'q': city, 'appid': self._appid, 'units': 'metric'})
         if res.code == 0:
             parsed = self._parse(str(res))
             if len(parsed) > 0:
@@ -163,7 +179,9 @@ class Weather(object):
         ret = []
         if len(ids) == 0:
             return ret
-        res = await self._http.get(self._url, payload={'id': ','.join(ids), 'appid': self._appid, 'units': 'metric'})
+        res = await self._http.get('{}?{}'.format(self._url_group, self._http.urlencode({'id': ','.join(ids),
+                                                                                         'appid': self._appid,
+                                                                                         'units': 'metric'}, safe=',')))
         if res.code == 0:
             parsed = self._parse(str(res))
             if len(parsed) > 0:
@@ -223,13 +241,21 @@ class Weather(object):
 
 
 async def main(self, message, *args, **kwargs):
+    auto = False
     if 'weather_cities' not in kwargs:
-        res = await weather.default()
+        options = await db_get_user_option(message.author.id)
+        if options:
+            res = await weather(options)
+        else:
+            res = await weather.default()
+            auto = True
     else:
         res = await weather(kwargs['weather_cities'])
     if not res:
         await self.send(message.channel, 'Cities not found or not set.')
         return
+    if not auto:
+        await db_set_user_option(message.author.id, [str(weth['id']) for weth in res()])
     ans = []
     for one_weather in res():
         fmt = weather_format
