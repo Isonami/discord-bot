@@ -59,7 +59,7 @@ async def add_perm(bot, member, role):
 
 
 async def update_text_perm(bot, member_before, member):
-    if not isinstance(member_before, Member) or isinstance(member, Member):
+    if not isinstance(member_before, Member) or not isinstance(member, Member):
         return
     try:
         voice = member.voice_channel
