@@ -2,6 +2,7 @@
 import logging
 import string
 import asyncio
+from discord import Member
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,8 @@ async def add_perm(bot, member, role):
 
 
 async def update_text_perm(bot, member_before, member):
+    if not isinstance(member_before, Member) or isinstance(member, Member):
+        return
     try:
         voice = member.voice_channel
         server_name = member.server.name
