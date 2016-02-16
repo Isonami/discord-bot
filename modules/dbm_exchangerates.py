@@ -7,7 +7,7 @@ command = r'\$(?P<currency>(?: [a-z]{3})+)?'
 description = '{cmd_start}$ USD|EUR - show exchange rates'
 
 rates_url = None
-rates_delay = 600
+rates_delay = 3000
 rates_def = 'RUB'
 rates_any_list = ['USD', 'EUR', 'UAH']
 rates_format = '1 {need_rate} = {value:0.2f}{arrow} {base_rate}'
@@ -83,7 +83,7 @@ class Rates(object):
             return None, None
 
     def __contains__(self, item):
-        if item in self._last:
+        if item in self._current:
             return True
         return False
 

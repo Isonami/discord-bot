@@ -7,7 +7,7 @@ from datetime import datetime
 command = r'w[rz](?P<weather_cities>(?: [a-z0-9]+(?:(?:\([a-z]{2,3}\))|(?:,[a-z]{1,3}))?)+)?'
 description = '{cmd_start}wr|wz city|city(country short name)|city id - show weather for one city or more'
 
-weather_format = '{city} {country} - {main[temp]:.1f}°C {weather[main]} {cached:cached at %d.%M %H:%m}'
+weather_format = '{city} {country} - {main[temp]:.1f}°C {weather[main]} {cached:cached at %d.%m %H:%M}'
 weather_url = 'http://api.openweathermap.org/data/2.5/'
 nocache = False
 
