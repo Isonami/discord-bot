@@ -11,7 +11,7 @@ delay = 3600
 one_weather_format = '{city}: :{weather[emoji]}: {main[temp]:.1f}°C'
 one_currency_format = '[USD: {cur.usd.rub:0.2f}{arrow.usd.rub} RUB, {cur.usd.uah:0.2f}{arrow.usd.uah} UAH] ' \
                       '[GBP: {cur.gbp.rub:0.2f}{arrow.gbp.rub} RUB, {cur.gbp.uah:0.2f}{arrow.gbp.uah} UAH]'
-one_date_format = '{date:%d.%M %H:%m}:'
+one_date_format = '{date:%d.%m %H:%M}:'
 max_len = 12 * 4 - 1
 separrator = ', '
 cachedre = re.compile(r' \{cached(:?:[^}]+)?}')
