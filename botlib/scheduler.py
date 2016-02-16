@@ -41,7 +41,7 @@ class Job(object):
     def _result(self, cuuid, result):
         result = result.result()[0]
         if isinstance(result, Exception):
-            logger.exception("Job [%s] %s: %s", cuuid, result.__class__.__name__, result)
+            logger.error("Job [%s] %s: %s", cuuid, result.__class__.__name__, result)
         logger.info('End Job: %s UUID(%s)', str(self), cuuid)
 
     def _call(self):

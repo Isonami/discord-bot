@@ -6,10 +6,8 @@ from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
-cities = '524901'
+cities = '524901 498817 551487 700051'
 delay = 3600
-currencies = 'RUB UAH'
-currency_def = 'USD'
 one_weather_format = '{city}: :{weather[emoji]}: {main[temp]:.1f}°C'
 one_currency_format = '[USD: {cur.usd.rub:0.2f}{arrow.usd.rub} RUB, {cur.usd.uah:0.2f}{arrow.usd.uah} UAH] ' \
                       '[GBP: {cur.gbp.rub:0.2f}{arrow.gbp.rub} RUB, {cur.gbp.uah:0.2f}{arrow.gbp.uah} UAH]'
@@ -27,7 +25,7 @@ emoji_weather = {
     '10': 'umbrella',
     '11': 'zap',
     '13': 'snowflake',
-    '10': 'foggy',
+    '50': 'foggy',
 }
 
 
@@ -63,10 +61,6 @@ async def init(bot):
         raise ValueError('Channel id (\'channel_id\') required!')
     global cities
     cities = bot.config.get('sup.cities', cities)
-    global currencies
-    currencies = bot.config.get('sup.currencies', currencies)
-    global currency_def
-    currency_def = bot.config.get('sup.currency_def', currency_def)
     global one_weather_format
     one_weather_format = bot.config.get('sup.weather_format', one_weather_format)
     global one_currency_format
@@ -114,7 +108,9 @@ async def generate_message(bot):
         fmt = one_weather_format
         if 'cached' not in one_weather:
             fmt = cachedre.sub('', fmt)
-        one_weather['weather']['emoji'] = emoji_weather[one_weather['weather']['icon'][:-1]]
+        one_weather['weather']['emoji'] = emoji_weather.get(one_weather['weather']['icon'][:-1],
+                                                            '{}({})'.format(one_weather['weather']['main'],
+                                                                            one_weather['weather']['icon'][:-1]))
         weather_result.append(fmt.format(**one_weather))
     weather_result = separrator.join(weather_result)
     rates_result = one_currency_format.format(cur=ResolveCur(rates), arrow=ResolveCur(rates, arrow=True))
