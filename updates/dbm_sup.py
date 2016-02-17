@@ -8,7 +8,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 cities = '524901 498817 551487 700051'
-delay = 60
+delay = 3600
 one_weather_format = '{city}: :{weather[emoji]}: {main[temp]:.1f}°C'
 one_currency_format = '[USD: {cur.usd.rub:0.2f}{arrow.usd.rub} RUB, {cur.usd.uah:0.2f}{arrow.usd.uah} UAH] ' \
                       '[GBP: {cur.gbp.rub:0.2f}{arrow.gbp.rub} RUB, {cur.gbp.uah:0.2f}{arrow.gbp.uah} UAH]'
@@ -91,16 +91,16 @@ async def update(cuuid, bot, chan_id):
     for key, msg in enumerate(msgs):
         print(key, msg.content)
     if len(msgs) < max_len:
-        message.insert(0, '')
         message.insert(0, one_date_format.format(date=datetime.utcnow()))
+        message.insert(0, '')
         await bot.send(bot.get_channel(str(chan_id)), '\n'.join(message))
     else:
         for i in range(1, len(msgs)):
-            await bot.edit_message(msgs[i-1], msgs[i].content)
+            await bot.edit_message(msgs[i], msgs[i-1].content)
             await asyncio.sleep(1)
-        message.insert(0, '')
         message.insert(0, one_date_format.format(date=datetime.utcnow()))
-        await bot.edit_message(msgs[len(msgs) - 1], '\n'.join(message))
+        message.insert(0, '')
+        await bot.edit_message(msgs[0], '\n'.join(message))
 
 
 async def generate_message(bot):
