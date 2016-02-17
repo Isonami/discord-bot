@@ -31,6 +31,32 @@ async def init(bot):
     bot.config.set('exchangerates.rates', rates)
 
 
+class ResolveCur(object):
+    __slots__ = ['_rates', '_base', '_none', '_arrow']
+
+    def __init__(self, self_rates, base=False, none=False, arrow=False):
+        self._rates = self_rates
+        self._base = base
+        self._none = none
+        self._arrow = arrow
+
+    def __getattr__(self, currency):
+        if self._none:
+            if self._arrow:
+                return ''
+            return 0
+        currency = currency.upper()
+        if currency in self._rates:
+            if self._base:
+                if self._arrow:
+                    return self._rates(currency, self._base)[-1]
+                return self._rates(currency, self._base)[0]
+            else:
+                return ResolveCur(self._rates, currency, arrow=self._arrow)
+        else:
+            return ResolveCur(self._rates, none=True, arrow=self._arrow)
+
+
 class Rates(object):
     def __init__(self, bot, no_job):
         self._url = bot.config.get('exchangerates.url').format(appid=bot.config.get('exchangerates.appid'))
@@ -106,6 +132,17 @@ class Rates(object):
         if fmt:
             return fmt.format(need_rate=need_rate, base_rate=base_rate, value=num, arrow=arrow)
         return num, arrow
+
+    @property
+    def cur(self):
+        return ResolveCur(self)
+
+    @property
+    def arrow(self):
+        return ResolveCur(self, arrow=True)
+
+    def format(self, fmt):
+        return fmt.format(cur=self.cur, arrow=self.arrow)
 
 
 async def getrates(cuuid, crates):

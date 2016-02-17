@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-from discord import Message
 import asyncio
 import re
 from datetime import datetime
@@ -12,7 +11,7 @@ delay = 3600
 one_weather_format = '{city}: :{weather[emoji]}: {main[temp]:.1f}°C'
 one_currency_format = '[USD: {cur.usd.rub:0.2f}{arrow.usd.rub} RUB, {cur.usd.uah:0.2f}{arrow.usd.uah} UAH] ' \
                       '[GBP: {cur.gbp.rub:0.2f}{arrow.gbp.rub} RUB, {cur.gbp.uah:0.2f}{arrow.gbp.uah} UAH]'
-one_date_format = '{date:%d.%m %H:%M}:'
+one_date_format = '{date:%d.%m %H:%M (UTC)}:'
 max_len = 24
 separrator = ', '
 cachedre = re.compile(r' \{cached(:?:[^}]+)?}')
@@ -28,33 +27,6 @@ emoji_weather = {
     '13': 'snowflake',
     '50': 'foggy',
 }
-
-
-class ResolveCur(object):
-    __slots__ = ['_rates', '_base', '_none', '_arrow']
-
-    def __init__(self, rates, base=False, none=False, arrow=False):
-        self._rates = rates
-        self._base = base
-        self._none = none
-        self._arrow = arrow
-
-    def __getattr__(self, currency):
-        if self._none:
-            if self._arrow:
-                return ''
-            return 0
-        currency = currency.upper()
-        if currency in self._rates:
-            if self._base:
-                if self._arrow:
-                    return self._rates(currency, self._base)[-1]
-                return self._rates(currency, self._base)[0]
-            else:
-                return ResolveCur(self._rates, currency, arrow=self._arrow)
-        else:
-            return ResolveCur(self._rates, none=True, arrow=self._arrow)
-
 
 async def init(bot):
     chan_id = bot.config.get('sup.channel_id', None)
@@ -82,32 +54,47 @@ def sortfn(item):
     return item.timestamp
 
 
-async def update(cuuid, bot, chan_id):
+async def get_messages(bot, lim, chan_id):
     msgs = []
-    async for mes in bot.logs_from(bot.get_channel(str(chan_id)), limit=24):
+    async for mes in bot.logs_from(bot.get_channel(str(chan_id)), limit=lim):
+        msgs.append(mes)
+    sort_msgs = sorted(msgs, key=sortfn, reverse=True)
+    msgs = []
+    for mes in sort_msgs:
         if mes.author == bot.user:
             msgs.append(mes)
         else:
             break
+    return [msg for msg in reversed(msgs)]
+
+
+async def update(cuuid, bot, chan_id):
+    sort_msgs = await get_messages(bot, max_len, chan_id)
     message = await generate_message(bot)
     if not message:
         return
-    sort_msgs = sorted(msgs, key=sortfn)
     sort_content = [msg.content for msg in sort_msgs]
     sort_content.pop(0)
     # for key, msg in enumerate(stort_msgs):
     #     print(key, msg.content, msg.timestamp)
     # return
-    if len(msgs) < max_len:
-        message.insert(0, one_date_format.format(date=datetime.utcnow()))
-        message.insert(0, '')
+    if len(sort_msgs) < max_len:
+        def generator(items):
+            for item in items:
+                yield item.content
+        gen = generator(sort_msgs)
+        for msg in sort_msgs:
+            await bot.delete_message(msg)
+        for i in range(0, max_len - 1):
+            content = ' '
+            if max_len - (i + 1) <= len(sort_msgs):
+                content = next(gen)
+            await bot.send(bot.get_channel(str(chan_id)), content)
         await bot.send(bot.get_channel(str(chan_id)), '\n'.join(message))
     else:
-        for i in range(0, len(msgs) - 1):
+        for i in range(0, len(sort_msgs) - 1):
             await bot.edit_message(sort_msgs[i], sort_content[i])
             await asyncio.sleep(1)
-        message.insert(0, one_date_format.format(date=datetime.utcnow()))
-        message.insert(0, '')
         await bot.edit_message(sort_msgs[-1], '\n'.join(message))
 
 
@@ -128,8 +115,8 @@ async def generate_message(bot):
                                                                             one_weather['weather']['icon'][:-1]))
         weather_result.append(fmt.format(**one_weather))
     weather_result = separrator.join(weather_result)
-    rates_result = one_currency_format.format(cur=ResolveCur(rates), arrow=ResolveCur(rates, arrow=True))
-    return [weather_result, rates_result]
+    rates_result = rates.format(one_currency_format)
+    return ['', one_date_format.format(date=datetime.utcnow()), weather_result, rates_result]
 
 
 
