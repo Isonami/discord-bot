@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
-cities = '524901 498817 551487 700051'
+cities = '524901 498817 551487 700051 554234'
 delay = 3600
 one_weather_format = '{city}: :{weather[emoji]}: {main[temp]:.1f}°C'
 one_currency_format = '[USD: {cur.usd.rub:0.2f}{arrow.usd.rub} RUB, {cur.usd.uah:0.2f}{arrow.usd.uah} UAH] ' \
@@ -78,6 +78,10 @@ async def init(bot):
     job.start()
 
 
+def sortfn(item):
+    return item.timestamp
+
+
 async def update(cuuid, bot, chan_id):
     msgs = []
     async for mes in bot.logs_from(bot.get_channel(str(chan_id)), limit=24):
@@ -88,19 +92,23 @@ async def update(cuuid, bot, chan_id):
     message = await generate_message(bot)
     if not message:
         return
-    for key, msg in enumerate(msgs):
-        print(key, msg.content)
+    sort_msgs = sorted(msgs, key=sortfn)
+    sort_content = [msg.content for msg in sort_msgs]
+    sort_content.pop(0)
+    # for key, msg in enumerate(stort_msgs):
+    #     print(key, msg.content, msg.timestamp)
+    # return
     if len(msgs) < max_len:
         message.insert(0, one_date_format.format(date=datetime.utcnow()))
         message.insert(0, '')
         await bot.send(bot.get_channel(str(chan_id)), '\n'.join(message))
     else:
-        for i in range(1, len(msgs)):
-            await bot.edit_message(msgs[i], msgs[i-1].content)
+        for i in range(0, len(msgs) - 1):
+            await bot.edit_message(sort_msgs[i], sort_content[i])
             await asyncio.sleep(1)
         message.insert(0, one_date_format.format(date=datetime.utcnow()))
         message.insert(0, '')
-        await bot.edit_message(msgs[0], '\n'.join(message))
+        await bot.edit_message(sort_msgs[-1], '\n'.join(message))
 
 
 async def generate_message(bot):
