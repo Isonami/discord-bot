@@ -78,10 +78,6 @@ async def init(bot):
     job.start()
 
 
-def sortfn(item):
-    return item.timestamp
-
-
 async def update(cuuid, bot, chan_id):
     msgs = []
     async for mes in bot.logs_from(bot.get_channel(str(chan_id)), limit=24):
@@ -95,12 +91,14 @@ async def update(cuuid, bot, chan_id):
     for key, msg in enumerate(msgs):
         print(key, msg.content)
     if len(msgs) < max_len:
+        message.insert(0, '')
         message.insert(0, one_date_format.format(date=datetime.utcnow()))
         await bot.send(bot.get_channel(str(chan_id)), '\n'.join(message))
     else:
         for i in range(1, len(msgs)):
             await bot.edit_message(msgs[i-1], msgs[i].content)
             await asyncio.sleep(1)
+        message.insert(0, '')
         message.insert(0, one_date_format.format(date=datetime.utcnow()))
         await bot.edit_message(msgs[len(msgs) - 1], '\n'.join(message))
 
