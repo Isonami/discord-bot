@@ -78,7 +78,7 @@ class Rates(object):
         response = await self._http.get(self._url, etag=self._etag, date=self._date)
         if response.code == 0:
             return str(response), response.headers
-        elif response.code == 1:
+        elif response.code == 3:
             logger.debug('%sRates did not change', logger_expand)
             return None, None
 

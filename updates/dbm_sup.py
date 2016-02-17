@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 import logging
 from discord import Message
+import asyncio
 import re
 from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
 cities = '524901 498817 551487 700051'
-delay = 3600
+delay = 60
 one_weather_format = '{city}: :{weather[emoji]}: {main[temp]:.1f}°C'
 one_currency_format = '[USD: {cur.usd.rub:0.2f}{arrow.usd.rub} RUB, {cur.usd.uah:0.2f}{arrow.usd.uah} UAH] ' \
                       '[GBP: {cur.gbp.rub:0.2f}{arrow.gbp.rub} RUB, {cur.gbp.uah:0.2f}{arrow.gbp.uah} UAH]'
 one_date_format = '{date:%d.%m %H:%M}:'
-max_len = 12 * 4 - 1
+max_len = 24
 separrator = ', '
 cachedre = re.compile(r' \{cached(:?:[^}]+)?}')
 
@@ -77,23 +78,31 @@ async def init(bot):
     job.start()
 
 
+def sortfn(item):
+    return item.timestamp
+
+
 async def update(cuuid, bot, chan_id):
-    msg = None
-    async for mes in bot.logs_from(bot.get_channel(str(chan_id)), limit=1):
-        msg = mes
+    msgs = []
+    async for mes in bot.logs_from(bot.get_channel(str(chan_id)), limit=24):
+        if mes.author == bot.user:
+            msgs.append(mes)
+        else:
+            break
     message = await generate_message(bot)
     if not message:
         return
-    if not isinstance(msg, Message) or msg.author != bot.user:
-        message.insert(0, one_date_format.format(date=datetime.now()))
+    for key, msg in enumerate(msgs):
+        print(key, msg.content)
+    if len(msgs) < max_len:
+        message.insert(0, one_date_format.format(date=datetime.utcnow()))
         await bot.send(bot.get_channel(str(chan_id)), '\n'.join(message))
     else:
-        messgae_strings = msg.content.split('\n')
-        messgae_strings.append('')
-        messgae_strings.append(one_date_format.format(date=datetime.now()))
-        messgae_strings.extend(message)
-        messgae_strings = messgae_strings[-max_len:]
-        await bot.edit_message(msg, '\n'.join(messgae_strings))
+        for i in range(1, len(msgs)):
+            await bot.edit_message(msgs[i-1], msgs[i].content)
+            await asyncio.sleep(1)
+        message.insert(0, one_date_format.format(date=datetime.utcnow()))
+        await bot.edit_message(msgs[len(msgs) - 1], '\n'.join(message))
 
 
 async def generate_message(bot):

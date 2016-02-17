@@ -143,11 +143,14 @@ class Response(object):
             self._response = response
             self.http_code = self._response.code
             self.encoding = encoding
-            self.body = response.body
             self.headers = response.headers
+            if code != 3:
+                self.body = response.body
 
     def __str__(self):
-        return self.body.decode(self.encoding)
+        if self.code == 0:
+            return self.body.decode(self.encoding)
+        return 'None'
 
     @property
     def raw_response(self):
