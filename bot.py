@@ -173,6 +173,7 @@ class Bot(discord.Client):
             if self.disconnect:
                 return
             await self.restart_wait()
+            logger.info('Reeconnecting and is_closed is: %s', self.is_closed)
             if self.is_closed:
                 self.relogin(True)
 
