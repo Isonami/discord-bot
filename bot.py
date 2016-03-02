@@ -161,7 +161,7 @@ class Bot(discord.Client):
                     logout = False
                     if self.ws:
                         logout = True
-                    self.relogin(logout)
+                    await self.relogin(logout)
                 continue
             except Exception as exc:
                 logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
@@ -173,9 +173,9 @@ class Bot(discord.Client):
             if self.disconnect:
                 return
             await self.restart_wait()
-            logger.info('Reeconnecting and is_closed is: %s', self.is_closed)
+            logger.info('Reconnecting and is_closed is: %s', self.is_closed)
             if self.is_closed:
-                self.relogin(True)
+                await self.relogin(True)
 
     async def relogin(self, logout):
         while not self.disconnect:
