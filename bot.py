@@ -181,7 +181,11 @@ class Bot(discord.Client):
         while not self.disconnect:
             try:
                 if logout and self.is_logged_in:
-                    await self.logout()
+                    try:
+                        await self.logout()
+                    except Exception as exc:
+                        logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
+                    self._is_logged_in.clear()
                 await self.login(self.user_login, self.user_password)
                 if self.is_logged_in:
                     self._closed.clear()
