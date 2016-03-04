@@ -151,7 +151,14 @@ class Bot(discord.Client):
         while not self.disconnect:
             try:
                 await self.connect()
-            except (discord.ClientException, discord.GatewayNotFound) as exc:
+            except (ValueError, OSError) as exc:
+                logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
+                try:
+                    await self.logout()
+                except Exception as exc:
+                    logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
+                break
+            except Exception as exc:
                 if self.disconnect:
                     break
                 logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
@@ -162,19 +169,13 @@ class Bot(discord.Client):
                     logout = False
                     if self.ws:
                         logout = True
+                    logger.info('Reconnecting...')
                     await self.relogin(logout)
                 continue
-            except Exception as exc:
-                logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
-                try:
-                    await self.logout()
-                except Exception as exc:
-                    logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
-                break
             if self.disconnect:
                 return
             await self.restart_wait()
-            logger.info('Reconnecting and is_closed is: %s', self.is_closed)
+            logger.info('Reconnecting...')
             if self.is_closed:
                 await self.relogin(True)
 
