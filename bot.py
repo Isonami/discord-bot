@@ -15,6 +15,7 @@ import asyncio
 from botlib import config, sql, scheduler, http, web, unflip
 from tornado.platform.asyncio import AsyncIOMainLoop
 import functools
+import aiohttp
 
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
@@ -180,6 +181,8 @@ class Bot(discord.Client):
     async def relogin(self, logout):
         while not self.disconnect:
             try:
+                if self.session.closed:
+                    self.session = aiohttp.ClientSession(loop=self.loop)
                 if logout and self.is_logged_in:
                     # try:
                     await self.logout()
