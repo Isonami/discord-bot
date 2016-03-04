@@ -181,11 +181,11 @@ class Bot(discord.Client):
         while not self.disconnect:
             try:
                 if logout and self.is_logged_in:
-                    try:
-                        await self.logout()
-                    except Exception as exc:
-                        logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
-                    self._is_logged_in.clear()
+                    # try:
+                    await self.logout()
+                    # except Exception as exc:
+                    #     logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
+                    #     self._is_logged_in.clear()
                 await self.login(self.user_login, self.user_password)
                 if self.is_logged_in:
                     self._closed.clear()
@@ -193,7 +193,7 @@ class Bot(discord.Client):
                 else:
                     await self.restart_wait()
             except Exception as exc:
-                logger.error('Can not relogin: %s: %s', exc.__class__.__name__, exc)
+                logger.exception('Can not relogin: %s: %s', exc.__class__.__name__, exc)
                 await self.restart_wait()
 
     async def send(self, channel, message, **kwargs):
