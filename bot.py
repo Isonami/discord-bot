@@ -180,11 +180,14 @@ class Bot(discord.Client):
     async def relogin(self, logout):
         while not self.disconnect:
             try:
-                if logout:
+                if logout and self.is_logged_in:
                     await self.logout()
                 await self.login(self.user_login, self.user_password)
-                self._closed.clear()
-                break
+                if self.is_logged_in:
+                    self._closed.clear()
+                    break
+                else:
+                    await self.restart_wait()
             except Exception as exc:
                 logger.error('Can not relogin: %s: %s', exc.__class__.__name__, exc)
                 await self.restart_wait()
