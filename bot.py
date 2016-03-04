@@ -187,7 +187,7 @@ class Bot(discord.Client):
                 break
             except Exception as exc:
                 logger.error('Can not relogin: %s: %s', exc.__class__.__name__, exc)
-                self.restart_wait()
+                await self.restart_wait()
 
     async def send(self, channel, message, **kwargs):
         await self.send_message(channel, message, **kwargs)
