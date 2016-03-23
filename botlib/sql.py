@@ -1,29 +1,30 @@
 # -*- coding: utf-8 -*-
-import sqlite3
+import aioodbc
+import pyodbc
 import logging
-from Queue import Queue, Empty
-from time import sleep
+import asyncio
 from os import path
-from threading import Thread, Event
 
 logger = logging.getLogger(__name__)
-insql = Queue()
 open_dbs = {}
 
 sql_timeout = 30
 
+driver = "SQLite"
+
 
 class Result(object):
-    _result = None
-    _sql = None
-    _args = None
-    _sql_type = None
-    _con = None
-    _cur = None
-    _timeout = True
+    __slots__ = ['_result', '_sql', '_args', '_sql_type', '_con', '_cur', '_timeout', '_event']
 
     def __init__(self):
-        self._event = Event()
+        self._result = None
+        self._sql = None
+        self._args = None
+        self._sql_type = None
+        self._con = None
+        self._cur = None
+        self._timeout = True
+        self._event = asyncio.Event()
 
     @property
     def result(self):
@@ -53,7 +54,7 @@ class Result(object):
 
     @property
     def sql(self):
-        return self._sql
+        return self._sql or ""
 
     @property
     def args(self):
@@ -63,13 +64,14 @@ class Result(object):
     def sql_type(self):
         return self._sql_type
 
-    def get(self, sql_type, sql, args, timeout):
+    async def get(self, sql_type, sql, args, timeout):
         self._sql_type = sql_type
         self._sql = sql
         self._args = args
-        insql.put(self)
-        self._event.wait(timeout=timeout)
-        if self._timeout:
+        await insql.put(self)
+        try:
+            await asyncio.wait_for(self._event.wait(), timeout)
+        except asyncio.futures.TimeoutError:
             logger.error("Timeout on SQL operation: %s", self.sql)
         return self.result
 
@@ -83,72 +85,91 @@ class Result(object):
 
 
 class SQLCon(object):
+    __slots__ = ['_result', 'dsn', 'init_script']
+
     def __init__(self, init_script, db_name):
         self._result = Result()
         logger.debug("Init DB connection: %s", db_name)
-        res = self.get(-1, init_script, (db_name,))
+        db_path = path.join(sdir, "db", db_name)
+        self.dsn = 'Driver={};Database={}'.format(driver, db_path)
+        self.init_script = init_script
+
+    async def connection(self):
+        res = await self.get(-1, self.init_script, (self.dsn,))
         if res:
             self._result.con, self._result.cur = res
         if not self._result.cur:
-            raise sqlite3.DatabaseError("Can not init database: %s" % db_name)
+            raise pyodbc.DatabaseError("Can not init database: %s" % self.dsn)
 
-    def request(self, sql_str, *args, **kwargs):
-        res = self.get(1, sql_str, args)
+    async def request(self, sql_str, *args, **kwargs):
+        res = await self.get(1, sql_str, args)
         one = kwargs.get("one", None)
-        if one and res and len(res) > 0:
-            return res[0]
+        if isinstance(res, list):
+            if one and res and len(res) > 0:
+                return res[0]
         return res
 
-    def commit(self, sql_str, *args):
-        return self.get(0, sql_str, args)
+    async def commit(self, sql_str, *args):
+        return await self.get(0, sql_str, args)
 
-    def get(self, sql_type, sql, args, timeout=sql_timeout):
-        res = self._result.get(sql_type, sql, args, timeout)
+    async def get(self, sql_type, sql, args, timeout=sql_timeout):
+        res = await self._result.get(sql_type, sql, args, timeout)
         self._result.clear()
         return res
 
+    async def close(self):
+        await self._result.cur.close()
+        await self._result.con.close()
 
-def sql_db(bot):
+
+async def sql_db(bot):
+    loop = bot.loop
     while not bot.disconnect:
-        try:
-            item = insql.get()
-        except Empty:
-            sleep(1)
-            continue
+        item = await insql.get()
         if isinstance(item, Result):
             try:
-                logger.debug("New SQL Query: %s, args: %s", item.sql, unicode(item.args))
+                logger.debug("New SQL Query: %s, args: %s", item.sql, str(item.args))
                 if item.sql_type == -1:
-                    con = sqlite3.connect(path.join(bot_dir, "db", item.args[0]))
-                    cur = con.cursor()
-                    cur.executescript(item.sql)
+                    con = await aioodbc.connect(dsn=item.args[0], loop=loop)
+                    cur = await con.cursor()
+                    await cur.execute(item.sql)
+                    con.commit()
                     item.result = (con, cur)
                 else:
-                    item.cur.execute(item.sql, item.args)
+                    await item.cur.execute(item.sql, item.args)
                     if item.sql_type == 1:
-                        row = item.cur.fetchall()
+                        row = await item.cur.fetchall()
                         item.result = row
                     else:
-                        item.con.commit()
+                        await item.con.commit()
                         item.result = True
-            except Exception, exc:
-                logger.error("%s: %s" % (exc.__class__.__name__, exc))
+            except Exception as exc:
+                logger.exception("%s: %s" % (exc.__class__.__name__, exc))
                 item.result = None
 
 
-def sqlcon(sql_init, db_name):
+async def sqlcon(sql_init, db_name):
     if db_name in open_dbs:
         con = open_dbs[db_name]
     else:
         con = SQLCon(sql_init, db_name)
+        await con.connection()
         open_dbs[db_name] = con
     return con
 
 
+async def close():
+    for db_name in open_dbs:
+        con = open_dbs[db_name]
+        await con.close()
+
+
 def init(bot):
-    global bot_dir
-    bot_dir = bot.config.get("main.dir")
-    sql_th = Thread(name="SQLTh", target=sql_db, args=(bot,))
-    sql_th.daemon = True
-    sql_th.start()
+    global sdir
+    sdir = bot.config.get("main.dir")
+    global driver
+    driver = bot.config.get("sql.driver", driver)
+    global insql
+    insql = asyncio.Queue()
+    bot.async_function(sql_db(bot))
     return sqlcon

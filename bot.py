@@ -2,295 +2,262 @@
 import logging
 import logging.config
 import json
-from time import sleep, time
+from time import time
 import os
 import re
-from threading import Thread
 import signal
 import sys
-import types
 import discord
-import tornado.httpclient as httpclient
-import discord.endpoints as endpoints
+from discord import endpoints
 import modules
 import updates
-import pyfibot
-from pyfibot.pbot import NAME as PBOTNAME
+import asyncio
 from botlib import config, sql, scheduler, http, web, unflip
-from requests.packages.urllib3.connection import ConnectionError
-from ws4py.exc import HandshakeError
+from tornado.platform.asyncio import AsyncIOMainLoop
+import functools
+import aiohttp
+
 
 os.environ['NO_PROXY'] = 'discordapp.com, openexchangerates.org, srhpyqt94yxb.statuspage.io'
 
 PID = config.PID
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] (%(threadName)-10s) %(message)s",
-            'datefmt': "%d/%b/%Y %H:%M:%S"
-        },
-        'simple': {
-            'format': '%(levelname)s %(message)s'
-        },
-        },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-            },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'bot.log',
-            'formatter': 'verbose',
-            'maxBytes': 1024 * 1024 * 5,
-            'backupCount': 3,
-        },
-        },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            },
-    }
-}
-logging_file_name = "logging.json"
-ifnfo_line = """Nedo bot version %s
-by Isonami (github.com/Isonami/discord-bot)"""
-cmd_start = "."
-status_url = "https://srhpyqt94yxb.statuspage.io/api/v2/summary.json"
+logging_file_name = 'logging.json'
+ifnfo_line = '''Nedo bot version %s
+by Isonami (github.com/Isonami/discord-bot)'''
+cmd_start = '.'
+status_url = 'https://srhpyqt94yxb.statuspage.io/api/v2/summary.json'
+restart_wait_time = 300
 
 
-def sigterm_handler(_signo, _stack_frame):
+def sigterm_handler(*args):
     try:
-        if "webth" in globals():
-            webth.terminate()
-        if "bot" in globals() and not bot.disconnect:
-            logger.info("Stopping...")
+        if 'endfuture' in globals():
+            if loop.is_closed():
+                sys.exit(0)
+            if globals()['endfuture'].done():
+                sys.exit(0)
+            else:
+                return
+        if 'bot' in globals() and not bot.disconnect:
+            logger.info('Stopping...')
             bot.disconnect = True
-            bot.logout()
-            sys.exit(0)
-        if "bot" in globals() and bot.disconnect:
+            global endfuture
+            endfuture = asyncio.ensure_future(bot.bot_logout())
+        if 'bot' in globals() and bot.disconnect:
             return
         sys.exit(0)
-    except Exception, exc:
-        logger.error("%s: %s" % (exc.__class__.__name__, exc))
+    except Exception as exc:
+        logger.error('%s: %s' % (exc.__class__.__name__, exc))
         return None, None
 
 
-def server_status(client):
-    try:
-        logger.debug("Get server status")
-        response = client.fetch(status_url, method="GET")
-        # print response.body
-        rvars = json.loads(response.body)
-        if "components" in rvars:
-            for item in rvars["components"]:
-                if item["name"] == "API":
-                    if item["status"] == "operational":
-                        logger.debug("Server status is: operational")
-                        return True
-                    logger.debug("Server status is: %s" % item["status"])
-                    break
-        return None
-    except httpclient.HTTPError as e:
-        # HTTPError is raised for non-200 responses; the response
-        # can be found in e.response.
-        logger.error("HTTPError: " + str(e))
+class BotModules(object):
+    def __init__(self, dbot):
+        self.bot = dbot
+        self._modules = {}
+        self._commands = []
+        self.updates = []
+        self.cmds = {}
+        self.reg = None
+
+    def __getattr__(self, item):
+        if item in self._modules:
+            return self._modules[item]
+        else:
+            logger.error('Module %s is not loaded (or %s is wrong attribute).', item, item)
+            return None
+
+    def loaded(self, item, module):
+        if item in self._modules:
+            raise ValueError('Module with name {} allready loaded.'.format(item))
+        if item in self.__dict__:
+            raise ValueError('Can not replace reserver name {}, please use another'.format(item))
+        self._modules[item] = module
+
+    async def imp(self):
+        self.updates = await updates.init(self.bot)
+        self._commands = await modules.init(self.bot)
+        self._compile()
+
+    def _compile(self):
+        all_reg = r''
+        for cmd in self._commands:
+            if isinstance(cmd, modules.Command):
+                if cmd.description:
+                    desk = self.bot.config.get('.'.join([str(cmd), 'description']), cmd.description)
+                    cmd.description = desk.format(cmd_start=cmd_start)
+                reg = self.bot.config.get('.'.join([str(cmd), 'regex']), cmd.command)
+                all_reg += r'(?P<%s>^%s$)|' % (str(cmd), reg)
+                self.cmds[str(cmd)] = cmd
+        logger.debug('Regex: %s', all_reg[:-1])
+        self.reg = re.compile(all_reg[:-1], re.IGNORECASE)
 
 
-class Bot(object):
-    def __init__(self, notrealy=False):
+class Bot(discord.Client):
+    def __init__(self, main_loop, notrealy=False):
+        super().__init__(loop=main_loop)
+        ioloop = AsyncIOMainLoop()
+        ioloop.asyncio_loop = main_loop
+        ioloop.install()
+        self.notrealy = notrealy
+        self.tornado_loop = ioloop
         self.config = config.Config()
-        self.admins = self.config.get("discord.admins", [])
-        self.on_ready = []
+        self.admins = self.config.get('discord.admins', [])
+        self._next_restart = 0
         self.disconnect = False
-        self.http_client = http_client
+        self.tasks = []
         self.http = http.init(self)
         if not self.http:
-            raise EnvironmentError("Can not start without http lib.")
-        self.scheduler = scheduler.Scheduler()
+            raise EnvironmentError('Can not start without http lib.')
+        self.scheduler = scheduler.Scheduler(self)
         self.sqlcon = sql.init(self)
-        updates.init(self)
-        commands = modules.init(self)
-        self.login = self.config.get("discord.login")
-        self.password = self.config.get("discord.password")
-        self.unflip = self.config.get("discord.unflip", False)
-        if not notrealy:
-            self.client = discord.Client()
-            self.client.login(self.login, self.password)
-            self.cmds = {}
-            self.ifnfo_line = ifnfo_line % self.config.get("version")
-        pcommands = pyfibot.init(self)
-        if notrealy:
-            return
-        all_reg = r""
-        for reg, cmd, mod_name, desk, admin, private in commands:
-            if isinstance(cmd, types.FunctionType):
-                if desk:
-                    desk = self.config.get(".".join([mod_name, "description"]), desk)
-                    desk = desk.format(cmd_start=cmd_start)
-                reg = self.config.get(".".join([mod_name, "regex"]), reg)
-                all_reg += r"(?P<%s>^%s$)|" % (mod_name, reg)
-                self.cmds[mod_name] = {"CMD": cmd, "Description": desk, "Admin": admin, "Private": private}
-        for reg, cmd, cmd_name, mod_name, desk in pcommands:
-            if desk:
-                desk = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "description"]), desk)
-                if desk:
-                    desk = desk.format(cmd_start=cmd_start)
-            reg = self.config.get(".".join([PBOTNAME, mod_name, cmd_name, "regex"]), reg)
-            all_reg += r"(?P<%s>^%s$)|" % (cmd_name, reg)
-            self.cmds[cmd_name] = {"CMD": cmd, "Description": desk, "Admin": False, "Private": False}
-        logger.debug("Regex: %s", all_reg[:-1])
-        self.reg = re.compile(all_reg[:-1], re.IGNORECASE)
-        self.scheduler.start()
+        self.modules = BotModules(self)
+        self.user_login = self.config.get('discord.login')
+        self.user_password = self.config.get('discord.password')
+        self.unflip = self.config.get('discord.unflip', False)
+        self.ifnfo_line = ifnfo_line % self.config.get('version')
 
-        @self.client.event
-        def on_message(message):
-            logger.debug("New message %s", message)
-            self.msg_proc(message)
+        @self.event
+        async def on_message(message):
+            logger.debug('New message %s', message)
+            await self.msg_proc(message)
 
-        @self.client.event
-        def on_message_edit(old_message, message):
-            logger.debug("Message edited ftom %s to %s", old_message, message)
-            self.msg_proc(message)
+        @self.event
+        async def on_message_edit(old_message, message):
+            logger.debug('Message edited ftom %s to %s', old_message, message)
+            await self.msg_proc(message)
 
-        @self.client.event
-        def on_ready():
-            logger.debug('Logged in as %s (%s)', self.client.user.name, self.client.user.id)
-            for function in self.on_ready:
-                try:
-                    readyth = Thread(name="readyth_" + function.__name__, target=function, args=(self,))
-                    readyth.daemon = True
-                    readyth.start()
-                except Exception, exc:
-                    logger.error("%s: %s" % (exc.__class__.__name__, exc))
+        @self.event
+        async def on_ready():
+            logger.debug('Logged in as %s (%s)', self.user.name, self.user.id)
+            waiters = []
+            for upd in self.modules.updates:
+                waiters.append(upd.ready(self))
+            for one_wait in waiters:
+                await one_wait
 
-        @self.client.event
-        def on_disconnect():
-            pass
-            # if not self.disconnect:
-            #    logger.debug('Reconnecting')
-            #    self.reconnect()
+    async def restart_wait(self):
+        cur_time = int(time())
+        if cur_time > self._next_restart:
+            self._next_restart = cur_time + restart_wait_time
+        else:
+            logger.info('Waiting for next restart...')
+            await asyncio.sleep(self._next_restart - cur_time)
+            self._next_restart = cur_time + restart_wait_time
 
-    def reconnect(self):
-        self.client.logout()
+    async def bot_run(self):
+        await bot.modules.imp()
+        await self.login(self.user_login, self.user_password)
         while not self.disconnect:
             try:
-                if server_status(self.http_client):
-                    logger.info('Reconnect attempt...')
-                    self.client.login(self.login, self.password)
-                    if self.client.is_logged_in:
-                        return
-                    sleep(20)
+                await self.connect()
+            except (ValueError, OSError) as exc:
+                logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
+                try:
+                    await self.logout()
+                except Exception as exc:
+                    logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
+                break
+            except Exception as exc:
+                if self.disconnect:
+                    break
+                logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
+                await self.restart_wait()
+                resp = await self.http.get(endpoints.GATEWAY, headers=self.headers)
+                if resp.code == 1 and resp.http_code == 401:
+                    logger.error('Got 401 UNAUTHORIZED, relogin...')
+                    logout = False
+                    if self.ws:
+                        logout = True
+                    logger.info('Reconnecting...')
+                    await self.relogin(logout)
+                continue
+            if self.disconnect:
+                return
+            await self.restart_wait()
+            logger.info('Reconnecting...')
+            if self.is_closed:
+                await self.relogin(True)
+
+    async def relogin(self, logout):
+        while not self.disconnect:
+            try:
+                if self.session.closed:
+                    self.session = aiohttp.ClientSession(loop=self.loop)
+                if logout and self.is_logged_in:
+                    # try:
+                    await self.logout()
+                    # except Exception as exc:
+                    #     logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
+                    #     self._is_logged_in.clear()
+                await self.login(self.user_login, self.user_password)
+                if self.is_logged_in:
+                    self._closed.clear()
+                    break
                 else:
-                    sleep(300)
-            except Exception, exc:
-                logger.error("%s: %s" % (exc.__class__.__name__, exc))
-                sleep(60)
+                    await self.restart_wait()
+            except Exception as exc:
+                logger.exception('Can not relogin: %s: %s', exc.__class__.__name__, exc)
+                await self.restart_wait()
 
-    def send(self, channel, message, **kwargs):
-        if type(message) is unicode:
-            message = message.encode('utf-8')
-        self.client.send_message(channel, message, **kwargs)
+    async def send(self, channel, message, **kwargs):
+        await self.send_message(channel, message, **kwargs)
 
-    def msg_proc(self, message):
+    async def msg_proc(self, message):
         try:
             if message.content.startswith(cmd_start):
                 msg = ' '.join(message.content[len(cmd_start):].split())
-                m = self.reg.match(msg)
+                m = self.modules.reg.match(msg)
                 if m:
                     rkwargs = m.groupdict()
                     kwargs = {}
                     command = None
                     mod_name = None
-                    for item, value in rkwargs.iteritems():
+                    for item, value in rkwargs.items():
                         if value:
-                            if item in self.cmds:
-                                command = self.cmds[item]["CMD"]
+                            if item in self.modules.cmds:
+                                command = self.modules.cmds[item].main
                                 mod_name = item
                             else:
                                 kwargs[item] = value
                     args = m.groups()[len(rkwargs):]
                     if command and mod_name:
-                        if self.cmds[mod_name]["Admin"] and not self.is_admin(message.author):
+                        if self.modules.cmds[mod_name].admin and not self.is_admin(message.author):
                             return
-                        if self.cmds[mod_name]["Private"] and not message.channel.is_private:
+                        if self.modules.cmds[mod_name].private and not message.channel.is_private:
                             return
-                        command(self, message, *args, **kwargs)
+                        try:
+                            await command(self, message, *args, **kwargs)
+                        except Exception as exc:
+                            logger.exception("%s: %s", exc.__class__.__name__, exc)
             elif self.unflip and message.content.startswith(unflip.flip_str):
-                unflip.unflip(self, message.channel)
-        except Exception, exc:
-            logger.error("%s: %s" % (exc.__class__.__name__, exc))
+                await unflip.unflip(self, message.channel)
+        except Exception as exc:
+            logger.exception('%s: %s', exc.__class__.__name__, exc)
 
-    def typing(self, channel):
-        self.client.send_typing(channel)
-        """
-        if channel:
-            if hasattr(channel, 'id'):
-                url = "{0}/{1}/typing".format(endpoints.CHANNELS, channel.id)
-                logger.debug("Send 'typing' status to server")
-                state, resp = self.http(url, method="POST", headers=self.client.headers)
-                if state == 0:
-                    return True
-        """
-        return False
+    async def typing(self, channel):
+        await self.send_typing(channel)
 
-    def logout(self):
+    def async_function(self, future):
+        self.tasks.append(asyncio.ensure_future(future, loop=self.loop))
+
+    @staticmethod
+    async def close_connections():
+        await sql.close()
+
+    async def bot_logout(self):
         try:
-            logger.debug("Logout from server")
-            self.http_client.fetch(endpoints.LOGOUT, method="POST", headers=self.client.headers, body="",
-                                   request_timeout=5, connect_timeout=5)
-        except httpclient.HTTPError as e:
-            logger.error("HTTPError: " + str(e))
-        except Exception, exc:
-            logger.error("%s: %s" % (exc.__class__.__name__, exc))
-        self.client._close = True
-        self.client.ws.close()
-        self.client._is_logged_in = False
+            logger.debug('Logout from server')
+            await self.logout()
+        except Exception as exc:
+            logger.error('%s: %s', exc.__class__.__name__, exc)
+        await self.close_connections()
 
     def is_admin(self, user):
         return user.id in self.admins
 
 
-def botrestart(bconfig, exc):
-    logger.error("Can not connect (%s), restarting.", str(exc))
-    dtime = int(time())
-    try:
-        from modules.dbm_restart import modrestart
-        emerg_path = os.path.join(bconfig.get("main.dir"), "emerg_restart")
-        if os.path.exists(emerg_path):
-            with open(emerg_path, 'r') as f:
-                linedate = f.readline()
-                print linedate
-                if len(linedate) > 0:
-                    linedate = int(linedate)
-                    if dtime < linedate + 300:
-                        logger.error("Wait 5 minute to restart")
-                        sleep(300)
-        with open(emerg_path, 'w') as f:
-            dtime = str(int(time()))
-            f.write(dtime)
-        modrestart(bconfig)
-    except ImportError as exc:
-        logger.error("No module restart, exiting.")
-        sys.exit()
-
-
-def botrun(dbot):
-    try:
-        dbot.client.run()
-    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException) as exc:
-        botrestart(dbot.config, exc)
-    except Exception, exc:
-        logger.error("Bot stop working: %s: %s" % (exc.__class__.__name__, exc))
-        sys.exit()
-
-
-def main(notrealy=False):
+async def main(cloop, notrealy=False):
     main_dir = os.path.dirname(os.path.realpath(__file__))
     json_file = os.path.join(main_dir, logging_file_name)
     try:
@@ -298,42 +265,46 @@ def main(notrealy=False):
             global LOGGING
             LOGGING = json.load(json_config)
     except IOError as e:
-        message = "Can not open logging.json file: %s \n" % str(e)
+        message = 'Can not open logging.json file: %s \n' % str(e)
         sys.stderr.write(message)
         sys.exit(1)
     except ValueError as e:
-        message = "Can not open load json logging file: %s \n " % str(e)
+        message = 'Can not open load json logging file: %s \n ' % str(e)
         sys.stderr.write(message)
         sys.exit(1)
     logging.config.dictConfig(LOGGING)
     global logger
     logger = logging.getLogger(__name__)
-    global http_client
-    http_client = httpclient.HTTPClient()
+    global loop
+    loop = cloop
     global bot
     if notrealy:
-        bot = Bot(notrealy=True)
+        bot = Bot(loop, notrealy=True)
+        await bot.modules.imp()
+        await bot.close_connections()
         sys.exit(0)
     try:
-        bot = Bot()
-    except (ConnectionError, discord.GatewayNotFound, HandshakeError, discord.HTTPException) as exc:
-        bconfig = config.Config()
-        botrestart(bconfig, exc)
-    except Exception, exc:
-        logger.error("Can no init Bot, exiting: %s: %s" % (exc.__class__.__name__, exc))
-        exit()
-    th = Thread(name="Bot", target=botrun, args=(bot,))
-    th.daemon = True
-    th.start()
-    if bot.config.get("web.enable"):
-        global webth
-        webth = web.WebProxyThread(name="WebProxy", target=web.start_web, args=(bot,))
-        webth.daemon = True
-        webth.start()
-    while not bot.disconnect:
-        sleep(1)
+        bot = Bot(loop)
+    except Exception as exc:
+        logger.exception('Can no init Bot, exiting: %s: %s' % (exc.__class__.__name__, exc))
+        sys.exit(0)
+    if bot.config.get('web.enable'):
+        web.start_web(bot)
+    await bot.bot_run()
+    if 'endfuture' in globals():
+        while not globals()['endfuture'].done():
+            await asyncio.sleep(0.1)
+    else:
+        await bot.close_connections()
 
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, sigterm_handler)
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    main()
+if __name__ == '__main__':
+    if sys.platform == 'win32':
+        signal.signal(signal.SIGINT, sigterm_handler)
+        signal.signal(signal.SIGTERM, sigterm_handler)
+    else:
+        for signame in ('SIGINT', 'SIGTERM'):
+            loop.add_signal_handler(getattr(signal, signame),
+                                    functools.partial(sigterm_handler, signame))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(loop))
+    loop.close()

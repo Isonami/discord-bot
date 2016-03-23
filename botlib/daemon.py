@@ -17,13 +17,13 @@ class Daemon(object):
 
     def flush_err(self):
         sys.stderr.flush()
-        se = file(self.stderr, 'a+', 0)
+        se = open(self.stderr, 'a+')
         os.dup2(se.fileno(), sys.stderr.fileno())
 
     def daemonize(self):
         """
-        do the UNIX double-fork magic, see Stevens' "Advanced
-        Programming in the UNIX Environment" for details (ISBN 0201563177)
+        do the UNIX double-fork magic, see Stevens' 'Advanced
+        Programming in the UNIX Environment' for details (ISBN 0201563177)
         http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
         """
         try:
@@ -31,12 +31,12 @@ class Daemon(object):
             if pid > 0:
                 # exit first parent
                 sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
+        except OSError as e:
+            sys.stderr.write('fork #1 failed: %d (%s)\n' % (e.errno, e.strerror))
             sys.exit(1)
 
         # decouple from parent environment
-        os.chdir("/")
+        os.chdir('/')
         os.setsid()
         os.umask(0)
 
@@ -46,15 +46,15 @@ class Daemon(object):
             if pid > 0:
                 # exit from second parent
                 sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
+        except OSError as e:
+            sys.stderr.write('fork #2 failed: %d (%s)\n' % (e.errno, e.strerror))
             sys.exit(1)
 
         # redirect standard file descriptors
         sys.stdout.flush()
         # sys.stderr.flush()
-        si = file(self.stdin, 'r')
-        so = file(self.stdout, 'a+')
+        si = open(self.stdin, 'r')
+        so = open(self.stdout, 'a+')
         # se = file(self.stderr, 'a+', 0)
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
@@ -64,9 +64,9 @@ class Daemon(object):
         atexit.register(self.delpid)
         pid = str(os.getpid())
         try:
-            file(self.pidfile, 'w+').write("%s\n" % pid)
+            open(self.pidfile, 'w+').write('%s\n' % pid)
         except IOError as err:
-            message = str(err) + "\n"
+            message = str(err) + '\n'
             sys.stderr.write(message)
             sys.exit(1)
 
@@ -79,14 +79,14 @@ class Daemon(object):
         """
         # Check for a pidfile to see if the daemon already runs
         try:
-            pf = file(self.pidfile,'r')
+            pf = open(self.pidfile, 'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
             pid = None
 
         if pid:
-            message = "pidfile %s already exist. Daemon already running?\n"
+            message = 'pidfile %s already exist. Daemon already running?\n'
             sys.stderr.write(message % self.pidfile)
             sys.exit(1)
 
@@ -100,16 +100,17 @@ class Daemon(object):
         """
         # Get the pid from the pidfile
         try:
-            pf = file(self.pidfile,'r')
+            pf = open(self.pidfile, 'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
             pid = None
 
         if not pid:
-            message = "pidfile %s does not exist. Daemon not running?\n"
+            message = 'pidfile %s does not exist. Daemon not running?\n'
             sys.stderr.write(message % self.pidfile)
-            return # not an error in a restart
+            # not an error in a restart
+            return
 
         # Try killing the daemon process
         try:
@@ -123,16 +124,16 @@ class Daemon(object):
                 os.kill(pid, 9)
                 n -= 0.1
                 time.sleep(0.1)
-            message = "can not kill process\n"
+            message = 'can not kill process\n'
             sys.stderr.write(message)
             sys.exit(1)
-        except OSError, err:
+        except OSError as err:
             err = str(err)
-            if err.find("No such process") > 0:
+            if err.find('No such process') > 0:
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
             else:
-                print str(err)
+                print(str(err))
                 sys.exit(1)
 
     def restart(self):

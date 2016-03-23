@@ -1,62 +1,79 @@
 # -*- coding: utf-8 -*-
-import threading
+import asyncio
 import uuid
 import logging
 import types
+from random import randint
+import functools
 
 logger = logging.getLogger(__name__)
+stardelay = (5, 30)
 
 
-class Job(threading.Thread):
-    def __init__(self, target, name, args):
-        threading.Thread.__init__(self, target=target, name="job_{}".format(name), args=args)
-        self.daemon = True
+class Job(object):
+    __slots__ = ['name', 'paused', 'target', 'delay', 'args', 'loop', '_runned', '_handler', 'stardelay']
+
+    def __init__(self, bot, target, name, delay, stdelay, args):
+        self.name = name
+        self.target = target
+        self.delay = delay
+        self.args = args
+        self.loop = bot.loop
+        self.paused = bot.notrealy
+        self._runned = False
+        self._handler = None
+        self.stardelay = stdelay
+
+    def __str__(self):
+        return self.name
+
+    def start(self):
+        if self.paused:
+            return
+        self._runned = True
+        self._handler = self.loop.call_later(randint(*self.stardelay), self._wrapper)
+
+    def _wrapper(self):
+        if self._runned:
+            self._handler = self.loop.call_later(self.delay, self._wrapper)
+            self._call()
+
+    def _result(self, cuuid, result):
+        result = result.result()[0]
+        if isinstance(result, Exception):
+            logger.error("Job [%s] %s: %s", cuuid, result.__class__.__name__, result)
+        logger.info('End Job: %s UUID(%s)', str(self), cuuid)
+
+    def _call(self):
+        cuuid = str(uuid.uuid4())
+        logger.info('Start Job: %s UUID(%s)', str(self), cuuid)
+        asyncio.gather(
+            self.target(cuuid, *self.args),
+            loop=self.loop, return_exceptions=True
+            ).add_done_callback(functools.partial(self._result, cuuid))
+
+    def destroy(self):
+        self._runned = False
+        if isinstance(self._handler, asyncio.Handle):
+            self._handler.cancel()
 
 
-class Scheduler(threading.Thread):
-    """Thread that executes a task every N seconds"""
+class Scheduler(object):
+    __slots__ = ['bot', 'jobs', 'stardelay']
 
-    def __init__(self, interval=10):
-        threading.Thread.__init__(self)
-        self._finished = threading.Event()
-        self._interval = interval
-        self._tasks = {}
-        self.daemon = True
+    def __init__(self, bot):
+        self.bot = bot
+        self.jobs = []
+        stdelay = bot.config.get('scheduler.startdelay', list(stardelay))
+        if isinstance(stdelay, list) and len(stdelay) == 2:
+            self.stardelay = tuple(stdelay)
+        else:
+            self.stardelay = stardelay
 
-    def setInterval(self, interval):
-        """Set the number of seconds we sleep between executing our task"""
-        self._interval = interval
-
-    def shutdown(self):
-        """Stop this thread"""
-        self._finished.set()
-
-    def run(self):
-        while 1:
-            if self._finished.isSet():
-                return
-            interval = self._interval
-            self.task(interval)
-            self._finished.wait(interval)
-
-    def task(self, interval):
-        for key, one_task in self._tasks.iteritems():
-            next_delay = one_task["Next"] - interval
-            if next_delay < 0:
-                cur_job = Job(one_task["Job"], one_task["Name"], one_task["Args"])
-                logger.debug("Starting job: %s", one_task["Name"])
-                cur_job.start()
-                one_task["Next"] = one_task["Delay"]
-            else:
-                one_task["Next"] = next_delay
-
-    def append(self, job, name, delay, *args):
+    def new(self, job, name, delay, *args):
         if isinstance(job, types.FunctionType) and isinstance(delay, int):
-            cuuid = str(uuid.uuid1())
-            self._tasks[cuuid] = {"Name": name, "Job": job, "Delay": delay, "Next": 0, "Args": args}
-            return cuuid
+            job = Job(self.bot, job, name, delay, self.stardelay, args)
+            self.jobs.append(job)
+            return job
         else:
             logger.error("Can not add job: job is not a function or delay not integer")
-
-    def remove(self, cuuid):
-        self._tasks.pop(cuuid)
