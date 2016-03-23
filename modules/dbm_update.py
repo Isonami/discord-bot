@@ -11,7 +11,7 @@ admin = True
 private = True
 
 logger = logging.getLogger(__name__)
-update_command = 'git -C {maindir} pull origin asyncio 2>&1'
+update_command = 'git -C {maindir} pull origin master 2>&1'
 
 
 async def init(bot):
