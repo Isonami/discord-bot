@@ -68,7 +68,7 @@ async def pip_update():
         else:
             proc = await asyncio.create_subprocess_shell(pip_command, stdout=asyncio.subprocess.PIPE)
             try:
-                await asyncio.wait_for(proc.wait(), 45)
+                await asyncio.wait_for(proc.wait(), 130)
             except asyncio.futures.TimeoutError:
                 proc.kill()
                 return 'Timeout error'

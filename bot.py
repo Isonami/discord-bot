@@ -217,7 +217,6 @@ class Bot(discord.Client):
     async def msg_proc(self, message):
         try:
             if message.content.startswith(cmd_start):
-                logger.debug(self.headers)
                 msg = ' '.join(message.content[len(cmd_start):].split())
                 m = self.modules.reg.match(msg)
                 if m:
