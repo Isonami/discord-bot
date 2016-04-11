@@ -73,7 +73,7 @@ async def pip_update():
                 proc.kill()
                 return 'Timeout error'
             out = await proc.stdout.read()
-            return str(out)
+            return out.decode()
     except Exception as exc:
         logger.exception('%s: %s' % (exc.__class__.__name__, exc))
         return 'Command error, see logs.'

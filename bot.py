@@ -112,8 +112,13 @@ class Bot(discord.Client):
         self.scheduler = scheduler.Scheduler(self)
         self.sqlcon = sql.init(self)
         self.modules = BotModules(self)
-        self.user_login = self.config.get('discord.login')
-        self.user_password = self.config.get('discord.password')
+        token = self.config.get('discord.token', None)
+        self.user_token = None
+        if token:
+            self.user_token = token
+        else:
+            self.user_login = self.config.get('discord.login')
+            self.user_password = self.config.get('discord.password')
         self.unflip = self.config.get('discord.unflip', False)
         self.ifnfo_line = ifnfo_line % self.config.get('version')
 
@@ -145,9 +150,15 @@ class Bot(discord.Client):
             await asyncio.sleep(self._next_restart - cur_time)
             self._next_restart = cur_time + restart_wait_time
 
+    async def smart_login(self):
+        if self.user_token:
+            await self.login(self.user_token)
+        else:
+            await self.login(self.user_login, self.user_password)
+
     async def bot_run(self):
         await bot.modules.imp()
-        await self.login(self.user_login, self.user_password)
+        await self.smart_login()
         while not self.disconnect:
             try:
                 await self.connect()
@@ -190,7 +201,7 @@ class Bot(discord.Client):
                     # except Exception as exc:
                     #     logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
                     #     self._is_logged_in.clear()
-                await self.login(self.user_login, self.user_password)
+                await self.smart_login()
                 if self.is_logged_in:
                     self._closed.clear()
                     break
@@ -206,6 +217,7 @@ class Bot(discord.Client):
     async def msg_proc(self, message):
         try:
             if message.content.startswith(cmd_start):
+                logger.debug(self.headers)
                 msg = ' '.join(message.content[len(cmd_start):].split())
                 m = self.modules.reg.match(msg)
                 if m:
