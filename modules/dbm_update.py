@@ -66,7 +66,7 @@ async def pip_update():
             except subprocess.CalledProcessError as e:
                 return vars(e)
         else:
-            proc = await asyncio.create_subprocess_shell(update_command, stdout=asyncio.subprocess.PIPE)
+            proc = await asyncio.create_subprocess_shell(pip_command, stdout=asyncio.subprocess.PIPE)
             try:
                 await asyncio.wait_for(proc.wait(), 45)
             except asyncio.futures.TimeoutError:
