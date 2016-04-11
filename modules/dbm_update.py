@@ -5,13 +5,14 @@ import sys
 if sys.platform == 'win32':
     import subprocess
 
-command = r'update'
+command = r'update(?P<update_lib> lib)?'
 description = '{cmd_start}update - update bot from git'
 admin = True
 private = True
 
 logger = logging.getLogger(__name__)
 update_command = 'git -C {maindir} pull origin master 2>&1'
+pip_command = 'pip3.5 install --upgrade git+https://github.com/Rapptz/discord.py@async'
 
 
 async def init(bot):
@@ -56,8 +57,34 @@ async def update():
         return 2
 
 
+async def pip_update():
+    try:
+        if sys.platform == 'win32':
+            try:
+                out = subprocess.check_output(pip_command, shell=True)
+                return out.decode()
+            except subprocess.CalledProcessError as e:
+                return vars(e)
+        else:
+            proc = await asyncio.create_subprocess_shell(update_command, stdout=asyncio.subprocess.PIPE)
+            try:
+                await asyncio.wait_for(proc.wait(), 45)
+            except asyncio.futures.TimeoutError:
+                proc.kill()
+                return 'Timeout error'
+            out = await proc.stdout.read()
+            return str(out)
+    except Exception as exc:
+        logger.exception('%s: %s' % (exc.__class__.__name__, exc))
+        return 'Command error, see logs.'
+
+
 async def main(self, message, *args, **kwargs):
     await self.typing(message.channel)
+    if 'update_lib' in kwargs:
+        await self.send(message.channel, await pip_update())
+        # 'install git+https://github.com/Rapptz/discord.py@async'
+        return
     code = await update()
     if code == 0:
         await self.send(message.channel, 'Update OK.')
