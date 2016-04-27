@@ -40,6 +40,7 @@ class Config(object):
         if nullconfig:
             return
         main_dir = path.join(path.dirname(path.realpath(__file__)), path.pardir)
+        main_dir = path.realpath(main_dir)
         json_file = path.join(main_dir, conf_file)
         if path.exists(json_file):
             try:

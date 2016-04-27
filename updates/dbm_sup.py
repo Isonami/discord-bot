@@ -74,7 +74,8 @@ async def update(cuuid, bot, chan_id):
     if not message:
         return
     sort_content = [msg.content for msg in sort_msgs]
-    sort_content.pop(0)
+    if len(sort_content) > 0:
+        sort_content.pop(0)
     # for key, msg in enumerate(stort_msgs):
     #     print(key, msg.content, msg.timestamp)
     # return
