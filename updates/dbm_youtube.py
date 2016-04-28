@@ -61,11 +61,15 @@ async def sd_update_channels(name, channels, ytype, lastid, lastdate):
 async def get_last_video(cuuid, http, name, ytype):
     url = base_url.format(channel=http.url_escape(name), type=http.url_escape(ytype))
     response = await http.get(url)
+    if cuuid:
+        cuuid = '[{}] '.format(cuuid)
+    else:
+        cuuid = ''
     if response.code == 0:
         try:
             mdom = minidom.parseString(str(response))
         except ExpatError as e:
-            logger.error('[%s] Can not parse response xml: %s', cuuid, e)
+            logger.error('Can not parse response xml: %s', cuuid, e)
             return
         ents = mdom.getElementsByTagName('entry')
         if isinstance(ents, list) and len(ents) > 0:
@@ -79,10 +83,10 @@ async def get_last_video(cuuid, http, name, ytype):
                     ent.getElementsByTagName('author')[0].getElementsByTagName('name')[0].childNodes[0].data
                 video['url'] = ent.getElementsByTagName('link')[0].getAttribute('href')
             except ValueError as e:
-                logger.error('[%s] Can not find element: %s', cuuid, e)
+                logger.error('Can not find element: %s', cuuid, e)
                 return
             except IndexError as e:
-                logger.error('[%s] Can not find element: %s', cuuid, e)
+                logger.error('Can not find element: %s', cuuid, e)
                 return
             dt = datetime.strptime(vdate, '%Y-%m-%dT%H:%M:%S+00:00')
             video['date'] = int((dt - datetime.utcfromtimestamp(0)).total_seconds())
