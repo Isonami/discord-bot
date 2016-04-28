@@ -31,7 +31,8 @@ emoji_weather = {
 async def init(bot):
     chan_id = bot.config.get('sup.channel_id', None)
     if not chan_id:
-        raise ValueError('Channel id (\'channel_id\') required!')
+        logger.info('Channel id (\'channel_id\') required for module sup')
+        return 1
     global cities
     cities = bot.config.get('sup.cities', cities)
     global one_weather_format
