@@ -46,7 +46,9 @@ async def init(bot):
             if real_name not in dis:
                 if hasattr(obj, "init"):
                     try:
-                        await obj.init(bot)
+                        ret = await obj.init(bot)
+                        if ret == 1:
+                            continue
                     except Exception as exc:
                         logger.error("Can not init module %s", name)
                         logger.exception("%s: %s", exc.__class__.__name__, exc)
