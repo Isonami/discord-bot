@@ -179,7 +179,7 @@ async def main(self, message, *args, **kwargs):
         itemlist = [p for p in mdom.getElementsByTagName('pod') if check_xml_pod(p)]
         if len(itemlist) < 1:
             didyoumeans = [p.childNodes[0].data for p in mdom.getElementsByTagName('didyoumean') if p and
-                           p.childNodes > 0]
+                           len(p.childNodes) > 0]
             if len(didyoumeans) < 1:
                 await self.send(message.channel, 'Can not understand question.')
                 return
