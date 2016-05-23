@@ -2,9 +2,9 @@
 import logging
 import json
 
-command = r'twitch (?:(?P<twitchcmd>(?:add)|(?:del)) ' \
+command = r'twitch (?:(?:(?P<twitchcmd>(?:add)|(?:del)) ' \
           r'(?:(?:https?://)?(?:www\.)?twitch\.tv/)?(?P<twitchname>[a-z0-9_]+)/?)|' \
-          r'(?P<twitchlist>list)'
+          r'(?P<twitchlist>list))'
 description = '{cmd_start}twitch add|del|list stream_name|stream_url - add/delete twitch on this channel to watch list ' \
               '(admin command)'
 admin = True
@@ -51,7 +51,7 @@ async def sd_select_stream(steam):
 
 
 async def sd_select_streams_for_channel(channel):
-    rows = await sqlcon.request('SELECT * FROM Streams WHERE;')
+    rows = await sqlcon.request('SELECT * FROM Streams;')
     out = []
     for row in rows:
         channels = row[3].split(',') if len(row[3]) > 0 else []
@@ -87,8 +87,9 @@ async def main(self, message, *args, **kwargs):
     else:
         if 'twitchlist' in kwargs:
             msg = STRINGS[9]
-            for stream in sd_select_streams_for_channel(message.channel.id):
+            for stream in await sd_select_streams_for_channel(message.channel.id):
                 msg += '\n{}: {}'.format(stream['Name'], 'online' if stream['State'] == 0 else 'offline')
+            await self.send(message.channel, msg)
             return
         cmd = kwargs.get('twitchcmd', None)
         name = kwargs.get('twitchname', None)
