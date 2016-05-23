@@ -2,9 +2,10 @@
 import logging
 import json
 
-command = r'twitch (?P<twitchcmd>(?:add)|(?:del)) ' \
-          r'(?:(?:https?://)?(?:www\.)?twitch\.tv/)?(?P<twitchname>[a-z0-9_]+)/?'
-description = '{cmd_start}twitch add|del stream_name|stream_url - add/delete twitch on this channel to watch list ' \
+command = r'twitch (?:(?P<twitchcmd>(?:add)|(?:del)) ' \
+          r'(?:(?:https?://)?(?:www\.)?twitch\.tv/)?(?P<twitchname>[a-z0-9_]+)/?)|' \
+          r'(?P<twitchlist>list)'
+description = '{cmd_start}twitch add|del|list stream_name|stream_url - add/delete twitch on this channel to watch list ' \
               '(admin command)'
 admin = True
 
@@ -24,7 +25,8 @@ STRINGS = [
     'Internal error occured while adding stream {stream}.',
     'Stream {stream} removed from watch list.',
     'Internal error occured while removing stream {stream}.',
-    'Stream {stream} is not in watch list for this channel.'
+    'Stream {stream} is not in watch list for this channel.',
+    'Twitch streams in watch list:'
 ]
 
 
@@ -46,6 +48,16 @@ async def sd_select_stream(steam):
         return {'Name': steam, 'State': 1, 'Options': None, 'Channels': []}
     return {'Name': row[1], 'State': row[2], 'Options': row[4],
             'Channels': row[3].split(',') if len(row[3]) > 0 else []}
+
+
+async def sd_select_streams_for_channel(channel):
+    rows = await sqlcon.request('SELECT * FROM Streams WHERE;')
+    out = []
+    for row in rows:
+        channels = row[3].split(',') if len(row[3]) > 0 else []
+        if channel in channels:
+            out.append({'Name': row[1], 'State': row[2], 'Options': row[4], 'Channels': channels})
+    return out
 
 
 async def sd_update_channels(stream, state, channels, options):
@@ -73,6 +85,11 @@ async def main(self, message, *args, **kwargs):
     if message.channel.is_private:
         await self.send(message.channel, STRINGS[0])
     else:
+        if 'twitchlist' in kwargs:
+            msg = STRINGS[9]
+            for stream in sd_select_streams_for_channel(message.channel.id):
+                msg += '\n{}: {}'.format(stream['Name'], 'online' if stream['State'] == 0 else 'offline')
+            return
         cmd = kwargs.get('twitchcmd', None)
         name = kwargs.get('twitchname', None)
         if not cmd or not name:
