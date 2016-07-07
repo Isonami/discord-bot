@@ -3,7 +3,7 @@ import os.path as path
 import logging
 import json
 from datetime import datetime
-VERSION = '5.1.8'
+VERSION = '5.1.9'
 PID = '/var/run/discord-bot/bot.pid'
 CONFIG = {
     'discord': {

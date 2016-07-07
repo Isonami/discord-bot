@@ -41,9 +41,22 @@ class MyDaemon(Daemon):
 
 
 if __name__ == '__main__':
+    def usage():
+        print('usage: %s [-p PID] start|stop|restart' % sys.argv[0])
+        sys.exit(2)
     check_packages()
-    daemon = MyDaemon(bot.PID)
-    if len(sys.argv) == 2 or len(sys.argv) == 3:
+    args = sys.argv
+    if '-p' in args:
+        if len(args) < 4:
+            usage()
+        index = args.index('-p')
+        PID = args[index + 1]
+        args.pop(index + 1)
+        args.pop(index)
+    else:
+        PID = bot.PID
+    daemon = MyDaemon(PID)
+    if len(args) == 2 or len(args) == 3:
         if 'start' == sys.argv[1]:
             daemon.start()
         elif 'stop' == sys.argv[1]:
@@ -59,5 +72,4 @@ if __name__ == '__main__':
             sys.exit(2)
         sys.exit(0)
     else:
-        print('usage: %s start|stop|restart' % sys.argv[0])
-        sys.exit(2)
+        usage()
