@@ -51,19 +51,19 @@ class SendHandler(tornado.web.RequestHandler):
     async def post(self, api, server, channel):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if api not in self.bot.config.get('web.apikeys', []):
-            self.write('{"error":"403", "text":"invalid api key"}')
+            self.write('{"status":"403", "text":"invalid api key"}')
             return
         channel = self.bot.get_channel(channel)
         if not channel or channel.server.id != server:
-            self.write('{"error":"404", "text":"channel not found"}')
+            self.write('{"status":"404", "text":"channel not found"}')
             return
         try:
             msg = self.request.body.decode('utf-8')
         except UnicodeDecodeError:
-            self.write('{"error":"502", "text":"can not decode message"}')
+            self.write('{"status":"502", "text":"can not decode message"}')
             return
         await self.bot.send(channel, msg)
-        self.write('{"error":"200"}')
+        self.write('{"status":"200"}')
 
 
 async def get_stats(bot):
