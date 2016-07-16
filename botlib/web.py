@@ -66,6 +66,31 @@ class SendHandler(tornado.web.RequestHandler):
         self.write('{"status":"200"}')
 
 
+class TopicHandler(tornado.web.RequestHandler):
+    def __init__(self, *args, **kwargs):
+        bot = kwargs.get('bot', None)
+        if not bot:
+            raise ValueError('kwarg "bot" must be specified!')
+        self.bot = bot
+        super().__init__(*args)
+    async def post(self, api, server, channel):
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
+        if api not in self.bot.config.get('web.apikeys', []):
+            self.write('{"status":"403", "text":"invalid api key"}')
+            return
+        channel = self.bot.get_channel(channel)
+        if not channel or channel.server.id != server:
+            self.write('{"status":"404", "text":"channel not found"}')
+            return
+        try:
+            msg = self.request.body.decode('utf-8')
+        except UnicodeDecodeError:
+            self.write('{"status":"502", "text":"can not decode message"}')
+            return
+        await self.bot.edit_channel(channel, topic=msg)
+        self.write('{"status":"200"}')
+
+
 async def get_stats(bot):
     try:
         dict_out = {}
@@ -130,6 +155,7 @@ def main(bot):
             [
                 (r"/stats", MainHandler, {'bot': bot}),
                 (r"/send/([A-Za-z0-9]{32})/([0-9]+)/([0-9]+)/?", SendHandler, {'bot': bot}),
+                (r"/topic/([A-Za-z0-9]{32})/([0-9]+)/([0-9]+)/?", TopicHandler, {'bot': bot}),
                 ],
             xsrf_cookies=False,
             debug=debug,
