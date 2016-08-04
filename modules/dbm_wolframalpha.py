@@ -170,7 +170,7 @@ async def main(self, message, *args, **kwargs):
         if now < delay['last']:
             await self.send(message.channel, 'Allowed one question %s' % delay_txt(walpha_delay))
             return
-        out = await getanswer(self.http, question)
+        out = await getanswer(self.http_client, question)
         if not out:
             await self.send(message.channel, 'Some times error happends, i can not control it =(')
             logger.error('Can not get response from wolframalpha')
@@ -195,7 +195,7 @@ async def main(self, message, *args, **kwargs):
             if len(img_node) > 0:
                 qimg = img_node[0].getAttribute('src')
             if len(qimg) > 0:
-                qimg = '\n' + await getimage(self.http, qimg.replace('&amp;', '&'))
+                qimg = '\n' + await getimage(self.http_client, qimg.replace('&amp;', '&'))
         for oneitem in itemlist:
             for text_node in oneitem.getElementsByTagName('plaintext'):
                 img_node = oneitem.getElementsByTagName('img')
@@ -210,7 +210,7 @@ async def main(self, message, *args, **kwargs):
                 if len(img_node) > 0:
                     img_src = img_node[0].getAttribute('src')
                 if len(img_src) > 0:
-                    img_src = '\n' + await getimage(self.http, img_src.replace('&amp;', '&'))
+                    img_src = '\n' + await getimage(self.http_client, img_src.replace('&amp;', '&'))
                 ans.append(msg_template_q.format(question=question, qimg=qimg))
                 ans.append(msg_template_a.format(answer=text, img=img_src))
         await insert_db(question.lower(), json.dumps(ans))

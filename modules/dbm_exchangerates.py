@@ -69,7 +69,7 @@ class Rates(object):
         self._date = ''
         self._current = {}
         self._last = {}
-        self._http = bot.http
+        self._http = bot.http_client
         self._next_update = 0
 
     async def update(self, cuuid=None):

@@ -122,7 +122,7 @@ class Weather(object):
         self._default = bot.config.get('openweather.default')
         self._appid = appid
         self._cache = {}
-        self._http = bot.http
+        self._http = bot.http_client
         self._idre = re.compile(r'[0-9]+')
         self._namere = re.compile(r'[a-z0-9]+(?:(?:\([a-z]{1,3}\))|(?:,[a-z]{1,3}))?')
         self._countryre = countryre
