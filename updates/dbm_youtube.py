@@ -97,7 +97,7 @@ async def update(cuuid, bot):
     youchannels = await sd_select_channels()
     for you_chann in youchannels:
         if len(you_chann['Channels']) > 0:
-            video = await get_last_video(cuuid, bot.http, you_chann['Name'], you_chann['Type'])
+            video = await get_last_video(cuuid, bot.http_client, you_chann['Name'], you_chann['Type'])
             if video:
                 logger.debug('[%s] Youtube last video: %s', cuuid, video)
                 if video['id'] != you_chann['Lastid'] and video['date'] > you_chann['Lastdate']:

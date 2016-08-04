@@ -106,8 +106,8 @@ class Bot(discord.Client):
         self._next_restart = 0
         self.disconnect = False
         self.tasks = []
-        self.http = http.init(self)
-        if not self.http:
+        self.http_client = http.init(self)
+        if not self.http_client:
             raise EnvironmentError('Can not start without http lib.')
         self.scheduler = scheduler.Scheduler(self)
         self.sqlcon = sql.init(self)
@@ -174,7 +174,7 @@ class Bot(discord.Client):
                     break
                 logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
                 await self.restart_wait()
-                resp = await self.http.get(endpoints.GATEWAY, headers=self.headers)
+                resp = await self.http_client.get(endpoints.GATEWAY, headers=self.headers)
                 if resp.code == 1 and resp.http_code == 401:
                     logger.error('Got 401 UNAUTHORIZED, relogin...')
                     logout = False

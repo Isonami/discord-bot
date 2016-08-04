@@ -103,7 +103,7 @@ async def main(self, message, *args, **kwargs):
             if message.channel.id in stream['Channels']:
                 await self.send(message.channel, STRINGS[2].format(stream=stream['Name'], channel=message.channel.name))
             else:
-                if not check_stream(self.http, stream['Name']):
+                if not check_stream(self.http_client, stream['Name']):
                     await self.send(message.channel, STRINGS[3].format(stream=stream['Name']))
                     return
                 stream['Channels'].append(message.channel.id)

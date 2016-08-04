@@ -27,7 +27,7 @@ async def init(bot):
     dealy = bot.config.get('twitch.dealy', dealy)
     global api_version
     api_version = bot.config.get('twitch.apiversion', api_version)
-    ret_url = await get_stream_url(bot.http)
+    ret_url = await get_stream_url(bot.http_client)
     if ret_url:
         global streams_url
         streams_url = ret_url
@@ -72,8 +72,8 @@ async def update(cuuid, bot):
     streams = await sd_select_channels()
     for one_stream in streams:
         if len(one_stream['Channels']) > 0:
-            url = '/'.join([streams_url, bot.http.url_escape(one_stream['Name'])])
-            response = await bot.http.get(url, headers=headers)
+            url = '/'.join([streams_url, bot.http_client.url_escape(one_stream['Name'])])
+            response = await bot.http_client.get(url, headers=headers)
             if response.code == 0:
                 logger.debug('[%s] Twitch response: %s', cuuid, str(response))
                 try:

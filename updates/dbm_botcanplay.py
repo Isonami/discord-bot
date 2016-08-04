@@ -16,12 +16,12 @@ bot_play_th_started = False
 
 
 async def get_game_list(bot):
-    response = await bot.http.get(init_url)
+    response = await bot.http_client.get(init_url)
     if response.code == 0:
         r = re.compile('<script src=\"([a-z0-9\./]+)\"></script>')
         m = r.findall(str(response))
         if len(m) > 0:
-            response = await bot.http.get(url_base.format(url=m[-1]))
+            response = await bot.http_client.get(url_base.format(url=m[-1]))
             if response.code == 0:
                 r = re.compile('executables:(\{(?:(?:[a-z0-9]+:\[[^\]]+\])?\}?,)+)id:([0-9]+),name:\"([^\"]+)\"')
                 return r.findall(str(response))

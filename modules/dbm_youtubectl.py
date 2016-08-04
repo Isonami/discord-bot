@@ -53,7 +53,8 @@ async def main(self, message, *args, **kwargs):
                 await self.send(message.channel, STRINGS[2].format(ychannel=you_chann['Name'],
                                                                    channel=message.channel.name))
             else:
-                video = await youtube_module.get_last_video(None, self.http, you_chann['Name'], you_chann['Type'])
+                video = await youtube_module.get_last_video(None, self.http_client, you_chann['Name'],
+                                                            you_chann['Type'])
                 if not video:
                     await self.send(message.channel, STRINGS[3].format(ychannel=you_chann['Name']))
                     return
