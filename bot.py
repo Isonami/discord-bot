@@ -193,8 +193,8 @@ class Bot(discord.Client):
     async def relogin(self, logout):
         while not self.disconnect:
             try:
-                if self.session.closed:
-                    self.session = aiohttp.ClientSession(loop=self.loop)
+                if self.http.session.closed:
+                    self.http.session = aiohttp.ClientSession(connector=self.http.connector, loop=self.loop)
                 if logout and self.is_logged_in:
                     # try:
                     await self.logout()
