@@ -156,6 +156,20 @@ class Bot(discord.Client):
         else:
             await self.login(self.user_login, self.user_password)
 
+    async def connect_check(self):
+        try:
+            await self.restart_wait()
+            resp = await self.http_client.get(endpoints.GATEWAY, headers=self.headers)
+            if resp.code == 1 and resp.http_code == 401:
+                logger.error('Got 401 UNAUTHORIZED, relogin...')
+                logout = False
+                if self.ws:
+                    logout = True
+                logger.info('Reconnecting...')
+                await self.relogin(logout)
+        except Exception as exc:
+            logger.error('Can not check authentication: %s: %s', exc.__class__.__name__, exc)
+
     async def bot_run(self):
         await bot.modules.imp()
         await self.smart_login()
@@ -164,27 +178,20 @@ class Bot(discord.Client):
                 await self.connect()
             except (ValueError, OSError) as exc:
                 logger.error('Bot stopping: %s: %s', exc.__class__.__name__, exc)
-                try:
-                    await self.logout()
-                except Exception as exc:
-                    logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
-                break
+                if str(exc).startswith('[Errno 8] Cannot connect to host'):
+                    self.connect_check()
+                    continue
+                else:
+                    try:
+                        await self.logout()
+                    except Exception as exc:
+                        logger.error('Can not logout: %s: %s', exc.__class__.__name__, exc)
+                        return
             except Exception as exc:
                 if self.disconnect:
-                    break
+                    return
                 logger.error('Bot stop working: %s: %s', exc.__class__.__name__, exc)
-                try:
-                    await self.restart_wait()
-                    resp = await self.http_client.get(endpoints.GATEWAY, headers=self.headers)
-                    if resp.code == 1 and resp.http_code == 401:
-                        logger.error('Got 401 UNAUTHORIZED, relogin...')
-                        logout = False
-                        if self.ws:
-                            logout = True
-                        logger.info('Reconnecting...')
-                        await self.relogin(logout)
-                except Exception as exc:
-                    logger.error('Can not check authentication: %s: %s', exc.__class__.__name__, exc)
+                self.connect_check()
                 continue
             if self.disconnect:
                 return
