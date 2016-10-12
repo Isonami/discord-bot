@@ -10,6 +10,7 @@ github_url = 'https://raw.githubusercontent.com/justintv/Twitch-API/master/READM
 streams_url = None
 dealy = 600
 api_version = "v3"
+appid = None
 
 sql_init = '''
    CREATE TABLE IF NOT EXISTS Streams(ID INTEGER PRIMARY KEY, Name TEXT, State INTEGER, Channels TEXT, Options TEXT);
@@ -28,6 +29,10 @@ async def init(bot):
     dealy = bot.config.get('twitch.dealy', dealy)
     global api_version
     api_version = bot.config.get('twitch.apiversion', api_version)
+    global appid
+    appid = bot.config.get('twitch.appid', appid)
+    if not appid:
+        raise ValueError('`twitch.appid` required.')
     ret_url = await get_stream_url(bot.http_client)
     if ret_url:
         global streams_url
@@ -39,7 +44,8 @@ async def init(bot):
         job.start()
         global headers
         headers = {
-            'Accept': 'application/vnd.twitchtv.{version}+json'.format(version=api_version)
+            'Accept': 'application/vnd.twitchtv.{version}+json'.format(version=api_version),
+            'Client-ID': appid
         }
         bot.config.set('twitch.enable', True)
         bot.config.set('twitch.baseurl', streams_url)
@@ -114,15 +120,15 @@ async def get_stream_url(http):
     #twitch now requires client-id for base request...try to use github readme (sic!)
     #re.match(r'\| \[GET ([/a-zA-Z0-9_\-]+)\]\((?:[/a-zA-Z0-9_\-]+#get-streams\) \| Get stream object \|\)')
     #| [GET /streams](/v3_resources/streams.md#get-streams) | Get stream object |
-    response = await http.get(github_url)
-    if response.code == 0:
-        for line in str(response).split('\n'):
-            m = re.match(r'\| \[GET ([/a-zA-Z0-9_\-.]+)\]\((?:[/a-zA-Z0-9_\-.]+)#get-streams\) \| Get stream object \|', line.strip())
-            if m:
-                logger.error(base_url + m.group(1))
-                return(base_url + m.group(1))
-    return
-    response = await http.get(base_url)
+    #response = await http.get(github_url)
+    #if response.code == 0:
+    #    for line in str(response).split('\n'):
+    #        m = re.match(r'\| \[GET ([/a-zA-Z0-9_\-.]+)\]\((?:[/a-zA-Z0-9_\-.]+)#get-streams\) \| Get stream object \|', line.strip())
+    #        if m:
+    #            logger.error(base_url + m.group(1))
+    #            return(base_url + m.group(1))
+    #return
+    response = await http.get(base_url, headers={'Client-ID': appid})
     if response.code == 0:
         ret_obj = json.loads(str(response))
         if '_links' in ret_obj and 'streams' in ret_obj['_links']:
