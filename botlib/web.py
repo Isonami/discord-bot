@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 import re
 import asyncio
+from datetime import timedelta
 
 mention = re.compile(r"<@([0-9]+)>")
 logger = logging.getLogger(__name__)
