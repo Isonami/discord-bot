@@ -61,6 +61,7 @@ settings.py
 settings.json
 logging.json
 logging-web.json
+isobot/*.yaml
 
 # db
 db/*.db
