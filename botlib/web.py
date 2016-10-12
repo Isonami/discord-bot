@@ -5,6 +5,7 @@ import tornado.escape
 import tornado.ioloop
 import tornado.httpserver
 import tornado.web
+from tornado.gen import with_timeout, convert_yielded
 import json
 from datetime import datetime
 import re
@@ -87,7 +88,8 @@ class TopicHandler(tornado.web.RequestHandler):
         except UnicodeDecodeError:
             self.write('{"status":"502", "text":"can not decode message"}')
             return
-        await self.bot.edit_channel(channel, topic=msg)
+        result = await with_timeout(timedelta(seconds=10),
+            convert_yielded(self.bot.edit_channel(channel, topic=msg)))
         self.write('{"status":"200"}')
 
 
