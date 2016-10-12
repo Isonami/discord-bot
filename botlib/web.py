@@ -5,12 +5,10 @@ import tornado.escape
 import tornado.ioloop
 import tornado.httpserver
 import tornado.web
-from tornado.gen import with_timeout, convert_yielded
 import json
 from datetime import datetime
 import re
 import asyncio
-from datetime import timedelta
 
 mention = re.compile(r"<@([0-9]+)>")
 logger = logging.getLogger(__name__)
@@ -18,6 +16,12 @@ port = 8480
 address = "127.0.0.1"
 debug = False
 chat_limit = 10
+
+
+def deco(func):
+    async def wrapper(*args, **kwargs):
+        return asyncio.get_event_loop().create_task(func(*args, **kwargs))
+    return wrapper
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -75,6 +79,8 @@ class TopicHandler(tornado.web.RequestHandler):
             raise ValueError('kwarg "bot" must be specified!')
         self.bot = bot
         super().__init__(*args)
+
+    @deco
     async def post(self, api, server, channel):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if api not in self.bot.config.get('web.apikeys', []):
@@ -89,8 +95,7 @@ class TopicHandler(tornado.web.RequestHandler):
         except UnicodeDecodeError:
             self.write('{"status":"502", "text":"can not decode message"}')
             return
-        result = await with_timeout(timedelta(seconds=10),
-            convert_yielded(self.bot.edit_channel(channel, topic=msg)))
+        self.bot.edit_channel(channel, topic=msg)
         self.write('{"status":"200"}')
 
 
