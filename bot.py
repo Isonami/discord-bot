@@ -8,7 +8,6 @@ import re
 import signal
 import sys
 import discord
-from discord import endpoints
 import modules
 import updates
 import asyncio
@@ -159,7 +158,7 @@ class Bot(discord.Client):
     async def connect_check(self):
         try:
             await self.restart_wait()
-            resp = await self.http_client.get(endpoints.GATEWAY, headers=self.headers)
+            resp = await self.http_client.get(self.http.GATEWAY, headers=self.headers)
             if resp.code == 1 and resp.http_code == 401:
                 logger.error('Got 401 UNAUTHORIZED, relogin...')
                 logout = False

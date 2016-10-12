@@ -2,13 +2,12 @@
 import logging
 import re
 from random import randint
-import discord.endpoints as endpoints
 import json
 from discord.game import Game
 
 logger = logging.getLogger(__name__)
-url_base = endpoints.BASE + '/{url}'
-init_url = url_base.format(url='channels/@me')
+url_base = None
+init_url = None 
 games = {'list': None, 'id': 0}
 play_delay = 420
 play_chance = 1
@@ -70,6 +69,10 @@ async def ready(bot):
 
 
 async def init(bot):
+    global url_base
+    url_base = bot.http.BASE + '/{url}'
+    global init_url
+    init_url = url_base.format(url='channels/@me')
     global play_delay
     play_delay = bot.config.get('botcanplay.delay', play_delay)
     global play_chance
