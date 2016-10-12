@@ -81,6 +81,9 @@ class TopicHandler(tornado.web.RequestHandler):
         super().__init__(*args)
 
     @deco
+    async def update(hannel, topic='')
+        await self.bot.edit_channel(channel, topic=msg)
+
     async def post(self, api, server, channel):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         if api not in self.bot.config.get('web.apikeys', []):
@@ -95,7 +98,7 @@ class TopicHandler(tornado.web.RequestHandler):
         except UnicodeDecodeError:
             self.write('{"status":"502", "text":"can not decode message"}')
             return
-        await self.bot.edit_channel(channel, topic=msg)
+        await self.update(channel, topic=msg)
         self.write('{"status":"200"}')
 
 
