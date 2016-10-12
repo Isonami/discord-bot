@@ -95,7 +95,7 @@ class TopicHandler(tornado.web.RequestHandler):
         except UnicodeDecodeError:
             self.write('{"status":"502", "text":"can not decode message"}')
             return
-        self.bot.edit_channel(channel, topic=msg)
+        await self.bot.edit_channel(channel, topic=msg)
         self.write('{"status":"200"}')
 
 
