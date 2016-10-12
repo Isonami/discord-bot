@@ -117,7 +117,7 @@ async def get_stream_url(http):
     response = await http.get(github_url)
     if response.code == 0:
         for line in str(response).split('\n'):
-            m = re.match(r'\| \[GET ([/a-zA-Z0-9_\-]+)\]\((?:[/a-zA-Z0-9_\-]+#get-streams\) \| Get stream object \|\)', line)
+            m = re.match(r'\| \[GET ([/a-zA-Z0-9_\-]+)\]\((?:[/a-zA-Z0-9_\-]+)#get-streams\) \| Get stream object \|\)', line)
             if m:
                 logger.error(m)
     return
