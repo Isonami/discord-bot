@@ -6,6 +6,7 @@ import json
 logger = logging.getLogger(__name__)
 
 base_url = 'https://api.twitch.tv/kraken'
+github_url = 'https://raw.githubusercontent.com/justintv/Twitch-API/master/README.md'
 streams_url = None
 dealy = 600
 api_version = "v3"
@@ -110,6 +111,16 @@ async def update(cuuid, bot):
 
 
 async def get_stream_url(http):
+    #twitch now requires client-id for base request...try to use github readme (sic!)
+    #re.match(r'\| \[GET ([/a-zA-Z0-9_\-]+)\]\((?:[/a-zA-Z0-9_\-]+#get-streams\) \| Get stream object \|\)')
+    #| [GET /streams](/v3_resources/streams.md#get-streams) | Get stream object |
+    response = await http.get(github_url)
+    if response.code == 0:
+        for line in str(response).split('\n'):
+            m = re.match(r'\| \[GET ([/a-zA-Z0-9_\-]+)\]\((?:[/a-zA-Z0-9_\-]+#get-streams\) \| Get stream object \|\)', line)
+            if m:
+                logger.error(m)
+    return
     response = await http.get(base_url)
     if response.code == 0:
         ret_obj = json.loads(str(response))
