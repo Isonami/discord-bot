@@ -23,16 +23,7 @@
     "appid": "SELFAPIKEY",
     "static_url": "http://some.site/{file}"
   },
-  "pyfibot": {
-    "module_openweather": {
-      "ban_cmd": [
-        "forecast"
-      ],
-      "weather": {
-        "regex": "w(?:r|eather)",
-        "description": "{cmd_start}w(r|eather) city - get weather for city (default: Moscow)"
-      },
-      "default_location": "Moscow"
-    }
+  "twitch": {
+    "appid": "SELFAPIKEY"
   }
 }
