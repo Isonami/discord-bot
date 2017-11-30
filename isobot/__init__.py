@@ -8,10 +8,10 @@ import discord
 from collections import namedtuple
 from aiohttp import ClientSession, ClientResponse
 from aiocron import Cron
-import log
-import db
-import modules
-import config
+from . import log
+from . import db
+from . import modules
+from . import config
 import asyncio
 import logging
 import web
