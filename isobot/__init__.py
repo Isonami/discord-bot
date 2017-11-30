@@ -12,9 +12,9 @@ from . import log
 from . import db
 from . import modules
 from . import config
+from . import web
 import asyncio
 import logging
-import web
 from os import path
 
 VersionInfo = namedtuple('VersionInfo', 'major minor micro releaselevel serial')
