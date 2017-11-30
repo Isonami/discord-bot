@@ -3,3 +3,4 @@ aiohttp>=2.3.0
 aiocron>=1.1
 peewee-async>=0.5.10
 dsnparse>=0.1.10
+PyYAML>=3.12
