@@ -2,6 +2,8 @@
 import logging
 import re
 import asyncio
+from datetime import datetime
+
 
 logger = logging.getLogger(__name__)
 
@@ -246,7 +248,8 @@ def setup(bot):
                     url=data.get('thumbnail_url', '').format(width=80, height=45))
                 if user_data.get('profile_image_url', None):
                     embed.set_author(name='Stream online: {}'.format(stream.display_name), url=url,
-                                     icon_url=user_data['profile_image_url'])
+                                     icon_url='{}?{}'.format(user_data['profile_image_url'],
+                                                             int(datetime.utcnow().timestamp())))
                 else:
                     embed.set_author(name='Stream online: {}'.format(stream.display_name))
                 embed.color = online_color
