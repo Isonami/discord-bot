@@ -19,6 +19,6 @@ setup(name='isobot',
       author='Isonami',
       url='https://github.com/Isonami/discord-bot',
       version=version,
-      packages=['isobot'],
+      packages=['isobot', 'isobot.modules'],
       license='MIT',
       )
