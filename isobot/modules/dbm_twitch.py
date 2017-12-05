@@ -245,11 +245,11 @@ def setup(bot):
                 game = await get_game(data['game_id'], session)
                 embed = bot.Embed(title=url, description=data.get('title', 'No title'))
                 embed.set_thumbnail(
-                    url=data.get('thumbnail_url', '').format(width=80, height=45))
+                    url='{}?{}'.format(data.get('thumbnail_url', '').format(width=80, height=45),
+                                       int(datetime.utcnow().timestamp())))
                 if user_data.get('profile_image_url', None):
                     embed.set_author(name='Stream online: {}'.format(stream.display_name), url=url,
-                                     icon_url='{}?{}'.format(user_data['profile_image_url'],
-                                                             int(datetime.utcnow().timestamp())))
+                                     icon_url=user_data['profile_image_url'])
                 else:
                     embed.set_author(name='Stream online: {}'.format(stream.display_name))
                 embed.color = online_color
