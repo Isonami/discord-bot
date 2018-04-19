@@ -96,6 +96,7 @@ class Bot(commands.Bot):
     Context = commands.Context
     Embed = discord.Embed
     Colour = discord.Colour
+    utils = discord.utils
     ClientSession = BotClientSession
     commands = commands
     config = config.BaseConfig
@@ -107,9 +108,11 @@ class Bot(commands.Bot):
     module_loader_event = asyncio.Event()
     inits = []
     init_loader_event = asyncio.Event()
+    unloads = []
     var = Var
     custom_processors = []
     crons = []
+    roles = None
     web = None  # type: web.Web
 
     async def on_message_custom(self, message):
@@ -142,6 +145,11 @@ class Bot(commands.Bot):
                 if _is_submodule(lib_name, cron[0].__module__):
                     cron[1].stop()
                     self.crons.remove(cron)
+            unloads = self.unloads.copy()
+            for unload in unloads:
+                if _is_submodule(lib_name, unload.__module__):
+                    unload()
+                    self.unloads.remove(unload)
         super().unload_extension(name)
 
     @staticmethod
@@ -204,6 +212,13 @@ class Bot(commands.Bot):
                 raise ValueError('Init function must be coroutine')
             self.inits.append((func.__module__, func()))
             self.init_loader_event.set()
+            return func
+
+        return decorator
+
+    def unload(self):
+        def decorator(func):
+            self.unloads.append(func)
             return func
 
         return decorator
@@ -281,23 +296,27 @@ def main(debug=False):
     for module in modules.search(__name__):
         bot.load_extension(module)
 
-    module_loader = asyncio.ensure_future(bot.models_loader())
-    init_loader = asyncio.ensure_future(bot.init_loader())
     bot.web = web.Web(bot)
 
+    loaders = {
+        'models': None,
+        'init': None
+    }
+
     async def on_ready():
+        loaders['models'] = asyncio.ensure_future(bot.models_loader())
+        loaders['init'] = asyncio.ensure_future(bot.init_loader())
         await bot.web.run()
 
     bot.add_listener(bot.on_message_custom, 'on_message')
     bot.add_listener(on_ready)
     # bot.loop.run_forever()
     bot.run(cfg.get('token'))
-    if not module_loader.cancelled() and module_loader.done():
-        if module_loader.exception():
-            raise module_loader.exception()
-    if not init_loader.cancelled() and init_loader.done():
-        if init_loader.exception():
-            raise init_loader.exception()
+    for loader in loaders.values():
+        if not loader.cancelled() and loader.done():
+            if loader.exception():
+                raise loader.exception()
+
 
 if __name__ == '__main__':
     main()
