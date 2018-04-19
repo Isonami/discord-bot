@@ -233,7 +233,6 @@ def setup(bot):
                     return
                 async with session.get(api_url.users, headers=headers, params=[('id', stream.user_id)]) as resp:
                     if resp.status != 200:
-                        print(await resp.text())
                         logger.error('Remote API error!')
                     else:
                         resp_data = await resp.json()
