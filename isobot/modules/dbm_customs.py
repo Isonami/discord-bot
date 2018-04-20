@@ -38,13 +38,13 @@ def setup(bot):
                     await bot.db.create(Customs_Roles, role_id=role_id, guild_id=guild.id)
 
     @bot.group(invoke_without_command=True)
-    async def custom(ctx: bot.Context):
+    async def customs(ctx: bot.Context):
         """Custom games module"""
-        await bot.show_help(ctx, 'custom')
+        await bot.show_help(ctx, 'customs')
 
-    custom.error(bot.default_error)
+    customs.error(bot.default_error)
 
-    @custom.command()
+    @customs.command()
     async def sign(ctx: bot.Context):
         """Sign for custom games role"""
         try:
@@ -90,7 +90,7 @@ def setup(bot):
 
     sign.error(bot.default_error)
 
-    @custom.command()
+    @customs.command()
     async def unsign(ctx: bot.Context):
         """Unsign from custom games role"""
         try:
