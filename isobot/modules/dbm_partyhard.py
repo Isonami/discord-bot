@@ -69,6 +69,6 @@ def setup(bot):
 
         await ctx.author.remove_roles(role)
 
-        await ctx.send('We\'ll be miss you. :cry:')
+        await ctx.send('We\'ll miss you. :cry:')
 
     off.error(bot.default_error)
