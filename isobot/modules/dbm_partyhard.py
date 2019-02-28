@@ -30,14 +30,14 @@ def setup(bot):
 
     @bot.group(invoke_without_command=True)
     async def partyhard(ctx: bot.Context):
-        """Custom games module"""
+        """Partyhard module"""
         await bot.show_help(ctx, 'partyhard')
 
     partyhard.error(bot.default_error)
 
     @partyhard.command()
     async def on(ctx: bot.Context):
-        """Sign for custom games role"""
+        """Sign for partyhard role"""
         try:
             role_db = await bot.db.get(Partyhard_Roles, guild_id=ctx.guild.id)
         except Partyhard_Roles.DoesNotExist:
@@ -56,7 +56,7 @@ def setup(bot):
 
     @partyhard.command()
     async def off(ctx: bot.Context):
-        """Unsign from custom games role"""
+        """Unsign from partyhard role"""
         try:
             role_db = await bot.db.get(Partyhard_Roles, guild_id=ctx.guild.id)
         except Partyhard_Roles.DoesNotExist:
