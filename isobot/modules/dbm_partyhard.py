@@ -50,6 +50,8 @@ def setup(bot):
 
         await ctx.author.add_roles(role)
 
+        await ctx.send('Woohoo!')
+
     on.error(bot.default_error)
 
     @partyhard.command()
@@ -66,5 +68,7 @@ def setup(bot):
             return
 
         await ctx.author.remove_roles(role)
+
+        await ctx.send('We\'ll be miss you. :cry:')
 
     off.error(bot.default_error)
