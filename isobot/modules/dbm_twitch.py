@@ -78,7 +78,7 @@ def setup(bot):
                     return games[game_id]
             return {}
 
-    async def update_stresm(stream, data):
+    async def update_stream(stream, data):
         if stream.login != data['login']:
             stream.login = data['login']
         if stream.display_name != data['display_name']:
@@ -124,7 +124,7 @@ def setup(bot):
                 data = data[0]
                 try:
                     stream = await bot.db.get(Twitch_Streams, user_id=data['id'])
-                    await update_stresm(stream, data)
+                    await update_stream(stream, data)
                 except Twitch_Streams.DoesNotExist:
                     state = await get_stream_status(data['id'], session)
                     if state is None:
@@ -181,7 +181,7 @@ def setup(bot):
                 data = data[0]
                 try:
                     stream = await bot.db.get(Twitch_Streams, user_id=data['id'])
-                    await update_stresm(stream, data)
+                    await update_stream(stream, data)
                 except Twitch_Streams.DoesNotExist:
                     await ctx.send('Stream annoncer for '
                                    '<https://www.twitch.tv/{}> is not enabled here.'.format(data['login']))
@@ -239,7 +239,7 @@ def setup(bot):
                         resp_data = resp_data['data']
                         if len(resp_data):
                             user_data = resp_data[0]
-                            await update_stresm(stream, user_data)
+                            await update_stream(stream, user_data)
                 url = 'https://www.twitch.tv/{}'.format(stream.login)
                 game = await get_game(data['game_id'], session)
                 embed = bot.Embed(title=url, description=data.get('title', 'No title'))
