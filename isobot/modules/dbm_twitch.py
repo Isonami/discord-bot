@@ -52,6 +52,7 @@ def setup(bot):
     class Twitch_Streams_Enabled(bot.BaseModel):
         stream = bot.m.ForeignKeyField(Twitch_Streams, related_name='channels')
         channel_id = bot.m.BigIntegerField()
+        everyone = bot.m.BooleanField(null=True, default=False)
 
     async def get_stream_status(user_ids, session):
         if not isinstance(user_ids, list):
@@ -260,7 +261,10 @@ def setup(bot):
                     if not text_channel:
                         logger.error('Channel with id {} not found.'.format(channel.channel_id))
                         continue
-                    senders.append(asyncio.ensure_future(text_channel.send(embed=embed)))
+                    if channel.everyone:
+                        senders.append(asyncio.ensure_future(text_channel.send(content='@everyone', embed=embed)))
+                    else:
+                        senders.append(asyncio.ensure_future(text_channel.send(embed=embed)))
                 await asyncio.gather(*senders)
                 for sender in senders:
                     if sender.exception():
