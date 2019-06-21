@@ -88,15 +88,15 @@ def setup(bot):
             await bot.db.update(stream, only=stream.dirty_fields)
 
     @bot.group(invoke_without_command=True)
-    @bot.commands.guild_only()
+    @bot.guild_only()
     async def twitch(ctx: bot.Context):
         """Twitch stream announcer"""
-        await bot.show_help(ctx, 'twitch')
+        await ctx.send_help(twitch)
 
     twitch.error(bot.default_error)
 
     @twitch.command()
-    @bot.commands.guild_only()
+    @bot.guild_only()
     @bot.is_admin()
     async def add(ctx: bot.Context, url: str):
         """Add Twitch stream annoncer"""
@@ -153,7 +153,7 @@ def setup(bot):
     add.error(bot.default_error)
 
     @twitch.command(name='del')
-    @bot.commands.guild_only()
+    @bot.guild_only()
     @bot.is_admin()
     async def delete(ctx: bot.Context, url: str):
         """Delete Twitch stream annoncer"""
@@ -202,7 +202,7 @@ def setup(bot):
     delete.error(bot.default_error)
 
     @twitch.command(name='list')
-    @bot.commands.guild_only()
+    @bot.guild_only()
     async def list_annoncer(ctx: bot.Context):
         """List Twitch stream annoncers"""
         streams = await bot.db.execute(Twitch_Streams.select().join(Twitch_Streams_Enabled)

@@ -98,7 +98,6 @@ class Bot(commands.Bot):
     Colour = discord.Colour
     utils = discord.utils
     ClientSession = BotClientSession
-    commands = commands
     config = config.BaseConfig
     m = db.peewee
     BaseModel = db.peewee.Model
@@ -155,11 +154,6 @@ class Bot(commands.Bot):
     @staticmethod
     def modules_search():
         return modules.search(__name__)
-
-    async def show_help(self, ctx, *cmmds: str):
-        cmd = self.all_commands.get(help_word)
-        ctx.invoked_with = help_word
-        await cmd.callback(ctx, *cmmds)
 
     async def models_loader(self):
         while not self.is_closed():
@@ -251,10 +245,10 @@ class Bot(commands.Bot):
 
     @staticmethod
     async def default_error(ctx, error):
-        if isinstance(error, (bot.commands.UserInputError, bot.commands.CheckFailure)):
+        if isinstance(error, (bot.UserInputError, bot.CheckFailure)):
             await ctx.send(str(error))
         else:
-            logger.error('{}: {}'.format(error.__class__.__name__, error))
+            logger.exception('{}: {}'.format(error.__class__.__name__, error))
 
     @staticmethod
     def user_is_admin(ctx):
@@ -278,6 +272,9 @@ class Bot(commands.Bot):
             raise IsNotModerator()
 
         return commands.check(predicate)
+
+    def __getattr__(self, item):
+        return getattr(commands, item)
 
 
 bot = Bot(command_prefix='.', description=__description__.format(__version__), help_attrs={'name': help_word})

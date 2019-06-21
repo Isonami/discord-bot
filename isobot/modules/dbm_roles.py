@@ -8,7 +8,7 @@ def build_role(bot, role, role_name):
     @role.group(invoke_without_command=True, name=role_name)
     async def role_manage(ctx: bot.Context):
         """{} role""".format(role_name.capitalize())
-        await bot.show_help(ctx, 'role', role_name)
+        await ctx.send_help(role_manage)
 
     @role_manage.command()
     async def add(ctx: bot.Context, user: str):

@@ -1,5 +1,5 @@
-https://github.com/Rapptz/discord.py/archive/rewrite.zip#egg=discord.py
-aiohttp>=2.3.0
+discord.py==1.2.2
+aiohttp>=3.5.4
 aiocron>=1.1
 peewee-async>=0.5.10
 dsnparse>=0.1.10

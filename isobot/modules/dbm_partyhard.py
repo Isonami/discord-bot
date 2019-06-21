@@ -31,7 +31,7 @@ def setup(bot):
     @bot.group(invoke_without_command=True)
     async def partyhard(ctx: bot.Context):
         """Partyhard module"""
-        await bot.show_help(ctx, 'partyhard')
+        await ctx.send_help(partyhard)
 
     partyhard.error(bot.default_error)
 

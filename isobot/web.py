@@ -1,9 +1,19 @@
 # -*- coding: utf-8 -*-
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 syntax=python
 # vi: tabstop=8 expandtab shiftwidth=4 softtabstop=4 syntax=python
+import socket
+from ssl import SSLContext
+from typing import Optional, Callable, Type, cast, List
+from collections.abc import Iterable
+
 from aiohttp import web
 import asyncio
 import logging
+
+from aiohttp.abc import AbstractAccessLogger, Application
+from aiohttp.log import access_logger
+from aiohttp.web_log import AccessLogger
+from aiohttp.web_runner import AppRunner, BaseSite, TCPSite, UnixSite, SockSite
 
 logger = logging.getLogger(__name__)
 
@@ -38,40 +48,92 @@ class Web(web.Application):
         self.bot.load_extension(name)
         return web.Response(text='Module reloaded.')
 
-    async def run(self, *, host=None, port=8088, path=None, sock=None,
-                  ssl_context=None, backlog=128, access_log_format=None,
-                  access_log=web.access_logger):
-        """Run app"""
+    async def run(self, *,
+                  host: Optional[str] = None,
+                  port: Optional[int] = None,
+                  path: Optional[str] = '127.0.0.1',
+                  sock: Optional[socket.socket] = None,
+                  shutdown_timeout: float = 60.0,
+                  ssl_context: Optional[SSLContext] = None,
+                  print: Callable[..., None] = print,
+                  backlog: int = 128,
+                  access_log_class: Type[AbstractAccessLogger] = AccessLogger,
+                  access_log_format: str = AccessLogger.LOG_FORMAT,
+                  access_log: Optional[logging.Logger] = access_logger,
+                  handle_signals: bool = True,
+                  reuse_address: Optional[bool] = None,
+                  reuse_port: Optional[bool] = None) -> None:
 
-        await self.startup()
+        app = cast(Application, self)
+
+        runner = AppRunner(app, handle_signals=handle_signals,
+                           access_log_class=access_log_class,
+                           access_log_format=access_log_format,
+                           access_log=access_log)
+
+        await runner.setup()
+
+        sites = []  # type: List[BaseSite]
 
         try:
-            make_handler_kwargs = dict()
-            if access_log_format is not None:
-                make_handler_kwargs['access_log_format'] = access_log_format
-            self.handler = self.make_handler(loop=self.loop, access_log=access_log,
-                                             **make_handler_kwargs)
+            if host is not None:
+                if isinstance(host, (str, bytes, bytearray, memoryview)):
+                    sites.append(TCPSite(runner, host, port,
+                                         shutdown_timeout=shutdown_timeout,
+                                         ssl_context=ssl_context,
+                                         backlog=backlog,
+                                         reuse_address=reuse_address,
+                                         reuse_port=reuse_port))
+                else:
+                    for h in host:
+                        sites.append(TCPSite(runner, h, port,
+                                             shutdown_timeout=shutdown_timeout,
+                                             ssl_context=ssl_context,
+                                             backlog=backlog,
+                                             reuse_address=reuse_address,
+                                             reuse_port=reuse_port))
+            elif path is None and sock is None or port is not None:
+                sites.append(TCPSite(runner, port=port,
+                                     shutdown_timeout=shutdown_timeout,
+                                     ssl_context=ssl_context, backlog=backlog,
+                                     reuse_address=reuse_address,
+                                     reuse_port=reuse_port))
 
-            server_creations, uris = web._make_server_creators(
-                self.handler,
-                loop=self.loop, ssl_context=ssl_context,
-                host=host, port=port, path=path, sock=sock,
-                backlog=backlog)
-            self.servers = await asyncio.gather(*server_creations, loop=self.loop)
+            if path is not None:
+                if isinstance(path, (str, bytes, bytearray, memoryview)):
+                    sites.append(UnixSite(runner, path,
+                                          shutdown_timeout=shutdown_timeout,
+                                          ssl_context=ssl_context,
+                                          backlog=backlog))
+                else:
+                    for p in path:
+                        sites.append(UnixSite(runner, p,
+                                              shutdown_timeout=shutdown_timeout,
+                                              ssl_context=ssl_context,
+                                              backlog=backlog))
 
-            self.started = True
+            if sock is not None:
+                if not isinstance(sock, Iterable):
+                    sites.append(SockSite(runner, sock,
+                                          shutdown_timeout=shutdown_timeout,
+                                          ssl_context=ssl_context,
+                                          backlog=backlog))
+                else:
+                    for s in sock:
+                        sites.append(SockSite(runner, s,
+                                              shutdown_timeout=shutdown_timeout,
+                                              ssl_context=ssl_context,
+                                              backlog=backlog))
+            for site in sites:
+                await site.start()
 
-        except Exception as exc:
-            logger.error('{}: {}'.format(exc.__class__.__name__, exc))
-            await self.cleanup()
-            raise
+            if print:  # pragma: no branch
+                names = sorted(str(s.name) for s in runner.sites)
+                print("======== Running on {} ========\n"
+                      "(Press CTRL+C to quit)".format(', '.join(names)))
+            while True:
+                await asyncio.sleep(3600)  # sleep forever by 1 hour intervals
+        finally:
+            await runner.cleanup()
 
-    async def shutdown(self, shutdown_timeout=60.0):
-        if self.started:
-            server_closures = []
-            for srv in self.servers:
-                srv.close()
-            await asyncio.gather(*server_closures, loop=self.loop)
-            await super().shutdown()
-            await self.handler.shutdown(shutdown_timeout)
-            await self.cleanup()
+

@@ -40,7 +40,7 @@ def setup(bot):
     @bot.group(invoke_without_command=True)
     async def customs(ctx: bot.Context):
         """Custom games module"""
-        await bot.show_help(ctx, 'customs')
+        await ctx.send_help(customs)
 
     customs.error(bot.default_error)
 
