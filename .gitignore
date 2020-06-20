@@ -22,6 +22,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+debug.py
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -61,6 +62,7 @@ settings.py
 settings.json
 logging.json
 logging-web.json
+isobot/*.yaml
 
 # db
 db/*.db
