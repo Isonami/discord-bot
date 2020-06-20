@@ -58,7 +58,7 @@ async def _fetch_sql(database, operation, *args, **kwargs):
     while True:
         row = await cursor.fetchone()
         if not row:
-            await cursor.release
+            await cursor.release()
             return result
         result.append(row)
 
@@ -112,7 +112,7 @@ def initialize(bot):
             for r in await _fetch_sql(db, query):
                 if isinstance(r, tuple):
                     r = r[0]
-                if r == cls._meta.db_table:
+                if r == cls._meta.table_name:
                     return True
             return False
 
